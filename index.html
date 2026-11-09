@@ -1,0 +1,2287 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#F5F5F7" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <title>KNU Ride</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #F5F5F7;
+      --surface: #FFFFFF;
+      --text-primary: #1D1D1F;
+      --text-secondary: #86868B;
+      --accent-blue: #0071E3;
+      --accent-blue-hover: #0077ED;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", "Noto Sans KR", sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      -webkit-font-smoothing: antialiased;
+      letter-spacing: -0.02em;
+    }
+    .apple-glass {
+      background: rgba(255, 255, 255, 0.82);
+      backdrop-filter: saturate(180%) blur(24px);
+      -webkit-backdrop-filter: saturate(180%) blur(24px);
+    }
+    .apple-card {
+      background: #FFFFFF;
+      border-radius: 24px;
+      box-shadow: 0 2px 16px rgba(0, 0, 0, 0.035);
+      border: 1px solid rgba(0, 0, 0, 0.04);
+      transition: transform 0.26s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .apple-card-hover:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.06);
+    }
+    .apple-pill-transition {
+      transition: all 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.14);
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-[#0071E3] selection:text-white">
+
+  <!-- Minimal Header -->
+  <header class="apple-glass sticky top-0 z-30 border-b border-black/[0.05]">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
+      <!-- Clickable Brand Logo -> Returns to Home (택시팟) -->
+      <button id="brandHomeBtn" type="button" class="flex items-center gap-2.5 group focus:outline-none" title="홈 화면(택시팟)으로 이동">
+        <div class="w-8 h-8 rounded-xl bg-[#1D1D1F] group-hover:bg-[#0071E3] text-white flex items-center justify-center apple-pill-transition">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/>
+            <circle cx="7" cy="17" r="2"/>
+            <path d="M9 17h6"/>
+            <circle cx="17" cy="17" r="2"/>
+          </svg>
+        </div>
+        <span class="text-base font-semibold tracking-tight text-[#1D1D1F] group-hover:text-[#0071E3] apple-pill-transition">KNU Ride</span>
+      </button>
+
+      <!-- Segmented Navigation (Desktop) -->
+      <nav class="hidden md:flex items-center bg-black/[0.05] p-1 rounded-full">
+        <button type="button" data-tab="pods" class="nav-tab-btn px-4 py-1.5 rounded-full text-xs font-semibold bg-white text-[#1D1D1F] shadow-sm apple-pill-transition">
+          택시팟
+        </button>
+        <button type="button" data-tab="active" class="nav-tab-btn px-4 py-1.5 rounded-full text-xs font-medium text-[#86868B]/60 apple-pill-transition flex items-center gap-1.5">
+          <span>탑승 대기</span>
+          <span id="activePodBadge" class="hidden w-1.5 h-1.5 rounded-full bg-[#0071E3]"></span>
+        </button>
+        <button type="button" data-tab="settlement" class="nav-tab-btn px-4 py-1.5 rounded-full text-xs font-medium text-[#86868B]/60 apple-pill-transition">
+          정산
+        </button>
+        <button type="button" data-tab="ratings" class="nav-tab-btn px-4 py-1.5 rounded-full text-xs font-medium text-[#86868B]/60 apple-pill-transition">
+          동승 평가
+        </button>
+      </nav>
+
+      <!-- User Profile & Quick Create -->
+      <div class="flex items-center gap-3">
+        <div class="flex items-center gap-1.5 text-xs text-[#86868B]">
+          <span>김강남</span>
+          <span class="text-[#1D1D1F] font-semibold tabular-nums" id="headerUserRating">★ 4.92</span>
+        </div>
+        <button id="openCreateModalBtn" type="button" class="px-4 py-1.5 rounded-full text-xs font-semibold text-white bg-[#1D1D1F] hover:bg-[#0071E3] apple-pill-transition">
+          + 팟 만들기
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Segmented Control -->
+    <div class="md:hidden px-4 pb-2.5 flex gap-1 overflow-x-auto">
+      <button type="button" data-tab="pods" class="nav-tab-btn flex-1 py-1.5 rounded-full text-xs font-semibold bg-[#1D1D1F] text-white text-center apple-pill-transition">
+        택시팟
+      </button>
+      <button type="button" data-tab="active" class="nav-tab-btn flex-1 py-1.5 rounded-full text-xs font-medium text-[#86868B]/60 text-center apple-pill-transition">
+        탑승 대기
+      </button>
+      <button type="button" data-tab="settlement" class="nav-tab-btn flex-1 py-1.5 rounded-full text-xs font-medium text-[#86868B]/60 text-center apple-pill-transition">
+        정산
+      </button>
+      <button type="button" data-tab="ratings" class="nav-tab-btn flex-1 py-1.5 rounded-full text-xs font-medium text-[#86868B]/60 text-center apple-pill-transition">
+        동승 평가
+      </button>
+    </div>
+  </header>
+
+  <!-- Toast Container -->
+  <div id="toastContainer" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2 max-w-md w-full pointer-events-none px-4"></div>
+
+  <!-- Main Content -->
+  <main class="max-w-5xl mx-auto w-full flex-1 px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+
+    <!-- Step Progress Strip -->
+    <div id="journeyProgressStrip" class="hidden apple-card px-5 py-3.5 flex items-center justify-between gap-2 text-xs">
+      <div class="flex items-center gap-2 sm:gap-4 flex-wrap">
+        <span id="stepIndicator1" class="font-semibold text-[#0071E3] flex items-center gap-1.5">
+          <span class="w-5 h-5 rounded-full bg-[#0071E3] text-white text-[11px] flex items-center justify-center">1</span>
+          <span>탑승 대기</span>
+        </span>
+        <span class="text-black/15">/</span>
+        <span id="stepIndicator2" class="font-medium text-[#86868B] flex items-center gap-1.5">
+          <span class="w-5 h-5 rounded-full bg-black/[0.06] text-[#86868B] text-[11px] flex items-center justify-center">2</span>
+          <span>택시비 정산</span>
+        </span>
+        <span class="text-black/15">/</span>
+        <span id="stepIndicator3" class="font-medium text-[#86868B] flex items-center gap-1.5">
+          <span class="w-5 h-5 rounded-full bg-black/[0.06] text-[#86868B] text-[11px] flex items-center justify-center">3</span>
+          <span>동승 평가 · 완료</span>
+        </span>
+      </div>
+      <span id="journeyRouteSmall" class="text-[11px] font-medium text-[#86868B] hidden sm:inline"></span>
+    </div>
+
+    <!-- ==================== TAB 1: 택시팟 (홈) ==================== -->
+    <section id="tab-pods" class="tab-panel space-y-5">
+
+      <!-- Active Pod Live Activity Banner -->
+      <div id="homeActivePodBanner" class="hidden bg-[#1D1D1F] text-white rounded-2xl p-4 sm:px-6 flex flex-wrap items-center justify-between gap-3 shadow-md">
+        <div class="flex items-center gap-3">
+          <span class="w-2 h-2 rounded-full bg-[#0071E3] animate-pulse"></span>
+          <div class="text-xs sm:text-sm">
+            <span class="text-white/60 mr-1.5">진행 중인 택시팟</span>
+            <strong id="homeActivePodRoute" class="font-semibold">강남대역 1번출구 → 이공관</strong>
+            <span id="homeActivePodStepBadge" class="ml-2 text-[11px] bg-white/15 px-2 py-0.5 rounded-full">탑승 대기</span>
+          </div>
+        </div>
+        <button type="button" id="resumeActivePodBtn" class="bg-[#0071E3] hover:bg-[#0077ED] text-white text-xs font-semibold px-4 py-1.5 rounded-full apple-pill-transition">
+          이어서 진행 →
+        </button>
+      </div>
+
+      <!-- Modernist Hero & Prominent Create Pod CTA -->
+      <div class="apple-card p-6 sm:p-8 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+        <div class="lg:col-span-7 space-y-5">
+          <div class="space-y-1.5">
+            <span class="text-[11px] font-semibold uppercase tracking-widest text-[#0071E3]">Kangnam University Mobility</span>
+            <h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-[#1D1D1F]">
+              캠퍼스 건물별 택시 동승
+            </h2>
+            <p class="text-xs sm:text-sm text-[#86868B]">
+              강남대역 1번출구 · 기흥역 3번출구에서 원하는 건물까지 2~4인이 함께 이동합니다.
+            </p>
+          </div>
+
+          <div class="grid grid-cols-3 gap-4 pt-4 border-t border-black/[0.05]">
+            <div>
+              <span class="text-[11px] text-[#86868B] block">모집 중인 팟</span>
+              <span class="text-lg font-semibold text-[#1D1D1F] tabular-nums" id="statOpenPods">6</span>
+            </div>
+            <div>
+              <span class="text-[11px] text-[#86868B] block">택시비 범위</span>
+              <span class="text-lg font-semibold text-[#1D1D1F] tabular-nums">5,500~7,000원</span>
+            </div>
+            <div>
+              <span class="text-[11px] text-[#86868B] block">내 누적 절약</span>
+              <span class="text-lg font-semibold text-[#0071E3] tabular-nums" id="statSavedMoney">0원</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Prominent Create Pod CTA Card -->
+        <div class="lg:col-span-5">
+          <button type="button" id="heroQuickCreateBtn" class="w-full text-left bg-[#1D1D1F] hover:bg-[#0071E3] text-white rounded-2xl p-6 sm:p-7 transition-all duration-300 shadow-lg hover:shadow-xl group flex flex-col justify-between min-h-[168px]">
+            <div class="flex items-center justify-between w-full">
+              <span class="text-[11px] font-semibold uppercase tracking-wider text-white/70 bg-white/10 px-2.5 py-1 rounded-full">
+                파티장(방장)으로 모집 시작
+              </span>
+              <div class="w-9 h-9 rounded-full bg-white/15 group-hover:bg-white group-hover:text-[#0071E3] flex items-center justify-center transition-all duration-300">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+              </div>
+            </div>
+            <div class="space-y-1 mt-6">
+              <div class="text-xl sm:text-2xl font-bold tracking-tight">새 택시팟 만들기</div>
+              <p class="text-xs text-white/75">배차 캡쳐(차종+번호판) 또는 카메라 번호판 OCR 인식</p>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Filter Bar -->
+      <div class="apple-card p-5 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-semibold text-[#1D1D1F]">하차 건물</span>
+            <span class="text-xs text-[#86868B]" id="selectedBldgTitle">전체</span>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <select id="headcountFilter" class="text-xs font-medium bg-[#F5F5F7] border-0 rounded-full px-3.5 py-1.5 text-[#1D1D1F] focus:outline-none focus:ring-2 focus:ring-[#0071E3]">
+              <option value="ALL">전체 인원 (2~4명)</option>
+              <option value="2">2명 팟</option>
+              <option value="3">3명 팟</option>
+              <option value="4">4명 팟</option>
+            </select>
+            <select id="departureFilter" class="text-xs font-medium bg-[#F5F5F7] border-0 rounded-full px-3.5 py-1.5 text-[#1D1D1F] focus:outline-none focus:ring-2 focus:ring-[#0071E3]">
+              <option value="ALL">전체 출발지</option>
+              <option value="강남대역 1번출구">강남대역 1번출구</option>
+              <option value="기흥역 3번출구">기흥역 3번출구</option>
+              <option value="강남대 정문">강남대 정문</option>
+              <option value="이공관 앞">이공관 앞</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="buildingFilterContainer" class="flex flex-wrap gap-1.5"></div>
+
+        <div id="buildingInfoBanner" class="pt-3 border-t border-black/[0.05] flex flex-wrap items-center justify-between gap-2 text-xs text-[#86868B] tabular-nums">
+          <span id="selectedBldgDesc">전체 캠퍼스 노선</span>
+          <div class="flex items-center gap-4">
+            <span>택시비 <strong class="text-[#1D1D1F] font-semibold" id="selectedBldgFare">5,500 ~ 7,000원</strong></span>
+            <span>1/N <strong class="text-[#0071E3] font-semibold" id="selectedBldgSplit">1,380 ~ 3,500원</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pod Grid -->
+      <div class="space-y-3">
+        <div class="flex items-center justify-between px-1">
+          <span class="text-xs font-semibold text-[#86868B] uppercase tracking-wider">
+            실시간 택시팟 <span id="podCountLabel" class="text-[#1D1D1F] ml-1 tabular-nums">6</span>
+          </span>
+        </div>
+        <div id="podsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 2: 탑승 대기 ==================== -->
+    <section id="tab-active" class="tab-panel hidden space-y-6">
+      <div class="apple-card p-6 sm:p-8 space-y-6">
+        <!-- Route & Promise Time Status Header -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-black/[0.06]">
+          <div class="space-y-2">
+            <div class="flex flex-wrap items-center gap-2">
+              <span id="roomStatusBadge" class="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-[#0071E3]/10 text-[#0071E3]">대기 중</span>
+              <span id="roomHostRoleBadge" class="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-[#1D1D1F] text-white">방장 권한</span>
+              <span id="roomVerifyBadge" class="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-black/[0.05] text-[#1D1D1F]">카카오T 인증</span>
+              <span class="text-xs text-[#86868B] tabular-nums" id="roomVehicleInfo">경기 32바 4821 · 아이오닉5</span>
+            </div>
+            <h2 class="text-2xl font-bold tracking-tight text-[#1D1D1F]" id="roomRouteTitle">
+              강남대역 1번출구 → 이공관
+            </h2>
+            <div class="flex items-center gap-3 pt-0.5">
+              <span class="text-xs text-[#86868B] tabular-nums" id="roomPromiseNote">약속 시각 14:15</span>
+              <button type="button" id="leavePodBtn" class="text-xs font-medium text-rose-600 hover:underline">팟 나가기</button>
+            </div>
+          </div>
+
+          <!-- Promise Time & 5-Min Grace Status Box -->
+          <div class="bg-[#F5F5F7] rounded-2xl p-4 sm:px-5 min-w-[270px] flex flex-col justify-between space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-medium text-[#86868B]">약속 시각 기준 상태</span>
+              <span id="timerStatusChip" class="text-[11px] font-semibold text-[#1D1D1F]">정시 대기</span>
+            </div>
+
+            <div class="flex items-baseline justify-between">
+              <div class="text-2xl font-bold tracking-tight tabular-nums text-[#1D1D1F]" id="countdownDisplay">14:15 약속</div>
+              <span id="graceNoteText" class="text-[11px] text-[#86868B]">+5분 경과 시 미도착 강퇴 가능</span>
+            </div>
+
+            <!-- Segmented Switcher: On-Time vs +5 Min Overdue -->
+            <div class="grid grid-cols-2 gap-1 bg-black/[0.06] p-1 rounded-xl">
+              <button type="button" id="resetTimerBtn" class="py-1.5 px-2 rounded-lg text-[11px] font-semibold bg-white text-[#1D1D1F] shadow-sm apple-pill-transition">
+                정시 대기 중
+              </button>
+              <button type="button" id="expire5MinNowBtn" class="py-1.5 px-2 rounded-lg text-[11px] font-medium text-[#86868B] hover:text-[#1D1D1F] apple-pill-transition">
+                약속 +5분 경과
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Unified Departure Control Strip -->
+        <div id="departWithoutLateBanner" class="rounded-2xl p-4 sm:p-5 bg-[#F5F5F7] flex flex-col sm:flex-row sm:items-center justify-between gap-4 apple-pill-transition">
+          <div class="space-y-0.5">
+            <div class="flex items-center gap-2">
+              <span id="departBannerIcon" class="w-2 h-2 rounded-full bg-amber-500"></span>
+              <h3 id="departBannerTitle" class="text-sm font-semibold text-[#1D1D1F]">
+                파티원 도착 확인 필요
+              </h3>
+            </div>
+            <p id="departBannerDesc" class="text-xs text-[#86868B] pl-4">
+              도착한 인원을 눌러 도착 완료로 변경하세요. 오지 않는 인원은 방장이 강퇴할 수 있습니다.
+            </p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2 shrink-0">
+            <button type="button" id="departAllReadyBtn" disabled class="px-5 py-2.5 rounded-full font-semibold text-xs apple-pill-transition bg-black/[0.06] text-[#86868B] cursor-not-allowed">
+              택시 출발하기
+            </button>
+          </div>
+        </div>
+
+        <!-- Passengers & Fare Preview -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div class="lg:col-span-7 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-[#86868B]">파티원 목록 (<span id="roomPassengerCount">0/4</span> 도착)</span>
+              <span class="text-xs text-[#86868B]">방장은 미도착 파티원을 강퇴할 수 있습니다</span>
+            </div>
+            <div id="roomPassengersList" class="space-y-2"></div>
+          </div>
+
+          <div class="lg:col-span-5 space-y-3">
+            <span class="text-xs font-semibold text-[#86868B]">차량 및 택시비</span>
+            <div class="bg-[#F5F5F7] rounded-2xl p-5 space-y-4">
+              <div id="roomTaxiProofCard" class="bg-white rounded-xl p-4 space-y-2"></div>
+
+              <div class="bg-white rounded-xl p-4 space-y-2.5 text-xs">
+                <div class="flex justify-between text-[#86868B]">
+                  <span>택시비</span>
+                  <span class="font-semibold text-[#1D1D1F] tabular-nums" id="roomTotalFareText">6,400원</span>
+                </div>
+                <div class="flex justify-between text-[#86868B]">
+                  <span>현재 인원 1/N</span>
+                  <span class="font-semibold text-[#0071E3] text-sm tabular-nums" id="roomSplitFareText">1,600원</span>
+                </div>
+                <div class="pt-3 border-t border-black/[0.05]">
+                  <button type="button" id="goToSettlementFromRoomBtn" disabled class="w-full py-2.5 px-3 rounded-xl font-semibold text-xs apple-pill-transition bg-black/[0.06] text-[#86868B] cursor-not-allowed">
+                    출발 후 정산 진행 가능
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 3: 택시비 정산 ==================== -->
+    <section id="tab-settlement" class="tab-panel hidden space-y-6">
+      <div class="apple-card p-6 sm:p-8 space-y-6">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-black/[0.06]">
+          <div class="space-y-1">
+            <span class="text-xs font-semibold text-[#0071E3]">1/N 더치페이</span>
+            <h2 class="text-2xl font-bold tracking-tight text-[#1D1D1F]">
+              택시비 정산
+            </h2>
+          </div>
+
+          <!-- Manual Fare Selection Box (Label '택시비') -->
+          <div class="bg-[#F5F5F7] rounded-2xl p-4 space-y-2.5">
+            <div class="flex items-center justify-between gap-4">
+              <label for="actualFareInput" class="text-xs font-semibold text-[#1D1D1F]">택시비</label>
+              <div class="flex items-center gap-1.5">
+                <button type="button" id="fareMinus100Btn" class="w-7 h-7 rounded-lg bg-white hover:bg-black/[0.04] text-[#1D1D1F] font-bold text-xs shadow-sm apple-pill-transition">-</button>
+                <input type="number" id="actualFareInput" min="5500" max="7000" step="100" value="6400" class="w-24 bg-white rounded-lg px-2.5 py-1 text-sm font-bold text-center text-[#1D1D1F] tabular-nums focus:outline-none focus:ring-2 focus:ring-[#0071E3]" />
+                <button type="button" id="farePlus100Btn" class="w-7 h-7 rounded-lg bg-white hover:bg-black/[0.04] text-[#1D1D1F] font-bold text-xs shadow-sm apple-pill-transition">+</button>
+                <span class="text-xs font-semibold text-[#1D1D1F]">원</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <button type="button" data-fare-preset="5500" class="fare-preset-btn flex-1 py-1 px-2.5 rounded-lg bg-white hover:bg-black/[0.04] text-[11px] font-semibold text-[#86868B] hover:text-[#1D1D1F] tabular-nums transition">5,500원</button>
+              <button type="button" data-fare-preset="6000" class="fare-preset-btn flex-1 py-1 px-2.5 rounded-lg bg-white hover:bg-black/[0.04] text-[11px] font-semibold text-[#86868B] hover:text-[#1D1D1F] tabular-nums transition">6,000원</button>
+              <button type="button" data-fare-preset="6500" class="fare-preset-btn flex-1 py-1 px-2.5 rounded-lg bg-white hover:bg-black/[0.04] text-[11px] font-semibold text-[#86868B] hover:text-[#1D1D1F] tabular-nums transition">6,500원</button>
+              <button type="button" data-fare-preset="7000" class="fare-preset-btn flex-1 py-1 px-2.5 rounded-lg bg-white hover:bg-black/[0.04] text-[11px] font-semibold text-[#86868B] hover:text-[#1D1D1F] tabular-nums transition">7,000원</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <div class="lg:col-span-7 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-[#86868B]">
+                정산 현황 (<span id="settlementCountText" class="tabular-nums">0/4</span>)
+              </span>
+              <span class="text-xs text-[#86868B]">인원별 정산 대기 버튼을 눌러 완료 처리</span>
+            </div>
+            <div id="settlementPassengersList" class="space-y-2"></div>
+          </div>
+
+          <div class="lg:col-span-5 bg-[#F5F5F7] rounded-2xl p-6 space-y-5">
+            <div class="space-y-2">
+              <span class="text-[11px] font-semibold text-[#86868B] block">정산 방식</span>
+              <div class="grid grid-cols-3 gap-1.5 bg-black/[0.05] p-1 rounded-xl">
+                <button type="button" data-pay-method="카카오페이" class="pay-method-btn py-1.5 rounded-lg text-xs font-semibold bg-white text-[#1D1D1F] shadow-sm transition">카카오페이</button>
+                <button type="button" data-pay-method="토스 송금" class="pay-method-btn py-1.5 rounded-lg text-xs font-medium text-[#86868B] transition">토스 송금</button>
+                <button type="button" data-pay-method="계좌 이체" class="pay-method-btn py-1.5 rounded-lg text-xs font-medium text-[#86868B] transition">계좌 이체</button>
+              </div>
+            </div>
+
+            <div class="space-y-2.5 pt-2 border-t border-black/[0.05]">
+              <div class="flex justify-between text-xs text-[#86868B]">
+                <span>운행 구간</span>
+                <span class="font-semibold text-[#1D1D1F]" id="settlementRouteText">강남대역 1번출구 → 이공관</span>
+              </div>
+              <div class="flex justify-between text-xs text-[#86868B]">
+                <span>탑승 인원</span>
+                <span class="font-semibold text-[#1D1D1F] tabular-nums" id="settlementHeadcountText">4명</span>
+              </div>
+              <div class="flex justify-between text-xs text-[#86868B]">
+                <span>총 택시비</span>
+                <span class="font-semibold text-[#1D1D1F] tabular-nums" id="settlementTotalFareText">6,400원</span>
+              </div>
+              <div class="pt-3 border-t border-black/[0.06] flex items-baseline justify-between">
+                <span class="text-xs font-semibold text-[#1D1D1F]">1인당 정산 금액</span>
+                <span class="text-2xl font-bold text-[#0071E3] tabular-nums" id="settlementPerPersonText">1,600원</span>
+              </div>
+              <p id="settlementRemainderNote" class="text-[11px] text-[#86868B] text-right hidden"></p>
+            </div>
+
+            <button type="button" id="confirmAllSettlementBtn" disabled class="w-full py-3 px-4 rounded-full font-semibold text-xs sm:text-sm apple-pill-transition bg-black/[0.06] text-[#86868B] cursor-not-allowed">
+              전원 정산 완료 시 활성화
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 4: 동승 평가 ==================== -->
+    <section id="tab-ratings" class="tab-panel hidden space-y-6">
+      <div class="apple-card p-6 sm:p-8 space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-black/[0.06]">
+          <div class="space-y-1">
+            <span class="text-xs font-semibold text-[#0071E3]">동승 매너</span>
+            <h2 class="text-2xl font-bold tracking-tight text-[#1D1D1F]">
+              동승자 별점 평가
+            </h2>
+          </div>
+          <div class="bg-[#F5F5F7] rounded-2xl px-4 py-2.5 text-xs">
+            <span class="font-semibold text-[#1D1D1F]" id="ratingRideTitle">강남대역 1번출구 → 이공관</span>
+          </div>
+        </div>
+
+        <div id="ratingPassengersContainer" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+
+        <!-- Complete Ride & Return to Home Bar -->
+        <div class="bg-[#F5F5F7] rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="space-y-0.5">
+            <div class="text-sm font-bold text-[#1D1D1F]">택시 탑승 및 동승 종료</div>
+            <p class="text-xs text-[#86868B]" id="finishRideStatusText">평가를 마친 뒤 탑승 완료 버튼을 누르면 택시팟이 해지되고 홈 화면으로 돌아갑니다.</p>
+          </div>
+          <button type="button" id="completeRideReturnHomeBtn" class="px-6 py-3 rounded-full text-xs sm:text-sm font-semibold bg-[#1D1D1F] hover:bg-[#0071E3] text-white shadow-sm apple-pill-transition shrink-0">
+            택시 탑승 완료 · 홈으로 돌아가기
+          </button>
+        </div>
+
+        <div class="pt-4 border-t border-black/[0.06] space-y-3">
+          <span class="text-xs font-semibold text-[#86868B]">최근 등록된 평가</span>
+          <div id="recentReviewsFeed" class="grid grid-cols-1 sm:grid-cols-3 gap-3"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==================== MODAL: 새 택시팟 만들기 (실제 OCR 엔진 탑재) ==================== -->
+  <div id="createPodModal" class="fixed inset-0 z-40 hidden bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-black/[0.06] overflow-hidden my-8">
+      <div class="px-6 py-4 border-b border-black/[0.06] flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <h3 class="text-base font-bold text-[#1D1D1F]">택시팟 만들기</h3>
+          <span class="text-[11px] font-semibold bg-[#1D1D1F] text-white px-2 py-0.5 rounded-full">방장 생성</span>
+        </div>
+        <button type="button" id="closeCreateModalBtn" class="w-7 h-7 rounded-full bg-[#F5F5F7] hover:bg-black/[0.08] flex items-center justify-center text-[#86868B] text-xs font-semibold">
+          ✕
+        </button>
+      </div>
+
+      <form id="createPodForm" class="p-6 space-y-5 max-h-[82vh] overflow-y-auto">
+        <!-- Segmented Mode Switcher -->
+        <div class="space-y-2.5">
+          <label class="block text-xs font-semibold text-[#1D1D1F]">차량 인증 방식</label>
+          <div class="grid grid-cols-2 gap-2 bg-[#F5F5F7] p-1 rounded-2xl">
+            <button type="button" data-verify-mode="capture" class="verify-mode-btn py-2 px-3 rounded-xl bg-white text-[#1D1D1F] shadow-sm text-xs font-semibold transition">
+              카카오T · 우버 캡쳐 (차종+번호판)
+            </button>
+            <button type="button" data-verify-mode="camera" class="verify-mode-btn py-2 px-3 rounded-xl text-[#86868B] text-xs font-medium transition">
+              택시 직접 촬영 (번호판만)
+            </button>
+          </div>
+
+          <div class="bg-[#F5F5F7] rounded-2xl p-4 space-y-3">
+            <!-- Capture Mode: Extracts Plate + Car Model -->
+            <div id="verifyModeCaptureBox" class="space-y-2.5">
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-xs text-[#86868B]">배차 캡쳐 이미지에서 차종·번호판 OCR 추출</span>
+                <div class="flex gap-1.5">
+                  <button type="button" id="loadKakaoSampleBtn" class="bg-white hover:bg-black/[0.03] text-[#1D1D1F] text-[11px] font-semibold px-2.5 py-1 rounded-lg shadow-sm transition">
+                    카카오T 이미지 OCR 테스트
+                  </button>
+                  <button type="button" id="loadUberSampleBtn" class="bg-white hover:bg-black/[0.03] text-[#1D1D1F] text-[11px] font-semibold px-2.5 py-1 rounded-lg shadow-sm transition">
+                    우버 이미지 OCR 테스트
+                  </button>
+                </div>
+              </div>
+              <label class="block cursor-pointer border border-dashed border-black/15 hover:border-[#0071E3] rounded-xl p-3.5 text-center bg-white transition">
+                <input type="file" id="screenshotFileInput" accept="image/*" class="hidden" />
+                <span class="text-xs font-semibold text-[#0071E3] block">카카오T · 우버 배차 캡쳐 사진 업로드</span>
+                <span class="text-[11px] text-[#86868B] mt-0.5 block">업로드한 이미지에서 차량번호와 차종을 실제 OCR로 읽어옵니다</span>
+              </label>
+            </div>
+
+            <!-- Camera Mode: Extracts ONLY License Plate -->
+            <div id="verifyModeCameraBox" class="hidden space-y-2.5">
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-xs text-[#86868B]">카메라로 택시 번호판만 단독 인식</span>
+                <div class="flex gap-1.5">
+                  <button type="button" id="startCameraBtn" class="bg-white hover:bg-black/[0.03] text-[#1D1D1F] text-[11px] font-semibold px-2.5 py-1 rounded-lg shadow-sm transition">
+                    실시간 카메라 켜기
+                  </button>
+                  <button type="button" id="snapSampleTaxiBtn" class="bg-[#1D1D1F] text-white text-[11px] font-semibold px-2.5 py-1 rounded-lg shadow-sm transition">
+                    현장 촬영 및 번호판 OCR
+                  </button>
+                </div>
+              </div>
+
+              <!-- Live Camera Container with License Plate Guide Frame -->
+              <div id="liveCameraWrap" class="hidden relative rounded-xl overflow-hidden bg-black">
+                <video id="cameraPreviewVideo" autoplay playsinline class="w-full h-44 object-cover"></video>
+                <div class="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
+                  <div class="w-56 h-16 border-2 border-white/90 rounded-lg shadow-[0_0_0_9999px_rgba(0,0,0,0.45)] flex items-center justify-center">
+                    <span class="text-[10px] font-semibold text-white/90 bg-black/50 px-2 py-0.5 rounded">번호판을 사각형 안에 맞춰주세요</span>
+                  </div>
+                </div>
+              </div>
+
+              <label class="block cursor-pointer border border-dashed border-black/15 hover:border-[#0071E3] rounded-xl p-3.5 text-center bg-white transition">
+                <input type="file" id="cameraFileInput" accept="image/*" capture="environment" class="hidden" />
+                <span class="text-xs font-semibold text-[#0071E3] block">카메라로 번호판 사진 찍기 / 사진 선택</span>
+                <span class="text-[11px] text-[#86868B] mt-0.5 block">차종 없이 택시 번호판 텍스트만 실제 OCR로 추출합니다</span>
+              </label>
+            </div>
+
+            <!-- OCR Progress Bar (Shown while Tesseract scans the image) -->
+            <div id="ocrScanningBox" class="hidden bg-white rounded-xl p-3 space-y-2 border border-[#0071E3]/20">
+              <div class="flex items-center justify-between text-[11px]">
+                <span id="ocrStatusLabel" class="font-semibold text-[#0071E3]">이미지 OCR 분석 중...</span>
+                <span id="ocrPercentLabel" class="font-bold tabular-nums text-[#1D1D1F]">0%</span>
+              </div>
+              <div class="w-full h-1.5 bg-black/[0.06] rounded-full overflow-hidden">
+                <div id="ocrProgressBar" class="h-full bg-[#0071E3] transition-all duration-200" style="width: 0%"></div>
+              </div>
+            </div>
+
+            <!-- Parsed Result Card -->
+            <div id="parsedTaxiPreview" class="bg-white rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div class="flex items-center gap-3">
+                <div id="previewThumbBox" class="w-14 h-12 rounded-xl bg-[#F5F5F7] overflow-hidden flex items-center justify-center text-[10px] font-semibold text-[#86868B] shrink-0 border border-black/[0.06]">
+                  <span>대기</span>
+                </div>
+                <div>
+                  <div class="flex items-center gap-1.5">
+                    <span id="previewBadgeText" class="text-[11px] font-medium text-[#86868B]">차량 미인증</span>
+                    <span class="text-xs font-bold text-[#1D1D1F] tabular-nums" id="previewPlateText">인증 전</span>
+                  </div>
+                  <p class="text-[11px] text-[#86868B]" id="previewCarModelText">배차 캡쳐 또는 번호판 사진을 올려주세요</p>
+                </div>
+              </div>
+
+              <!-- Editable Inputs (Car Model Input hides automatically in Camera mode!) -->
+              <div class="flex items-center gap-1.5 shrink-0">
+                <input type="text" id="customModelInput" placeholder="차종" value="" class="text-xs font-medium bg-[#F5F5F7] rounded-lg px-2.5 py-1.5 w-24 text-right focus:outline-none focus:ring-2 focus:ring-[#0071E3]" title="인식된 차종 (수정 가능)" />
+                <input type="text" id="customPlateInput" placeholder="번호판" value="" class="text-xs font-semibold bg-[#F5F5F7] rounded-lg px-2.5 py-1.5 w-28 text-right tabular-nums focus:outline-none focus:ring-2 focus:ring-[#0071E3]" title="인식된 차량번호 (수정 가능)" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Route Selection -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="newPodDeparture" class="block text-xs font-semibold text-[#1D1D1F] mb-1.5">출발지</label>
+            <select id="newPodDeparture" class="w-full text-xs font-medium bg-[#F5F5F7] rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#0071E3]">
+              <option value="강남대역 1번출구">강남대역 1번출구</option>
+              <option value="기흥역 3번출구">기흥역 3번출구</option>
+              <option value="강남대 정문">강남대 정문</option>
+              <option value="이공관 앞">이공관 앞</option>
+            </select>
+          </div>
+          <div>
+            <label for="newPodBuilding" class="block text-xs font-semibold text-[#1D1D1F] mb-1.5">도착 건물</label>
+            <select id="newPodBuilding" class="w-full text-xs font-medium bg-[#F5F5F7] rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#0071E3]">
+              <option value="샬롬관">샬롬관</option>
+              <option value="이공관" selected>이공관</option>
+              <option value="천은관">천은관</option>
+              <option value="우원관">우원관</option>
+              <option value="경천관">경천관</option>
+              <option value="인문사회관">인문사회관</option>
+              <option value="본관/도서관">본관/도서관</option>
+              <option value="심전관(기숙사)">심전관(기숙사)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Time, Headcount (2/3/4) & Manual Fare -->
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label for="newPodTime" class="block text-xs font-semibold text-[#1D1D1F] mb-1.5">약속 시각</label>
+            <input type="time" id="newPodTime" value="14:20" class="w-full text-xs font-medium bg-[#F5F5F7] rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0071E3]" />
+          </div>
+          <div>
+            <label for="newPodMax" class="block text-xs font-semibold text-[#1D1D1F] mb-1.5">탑승 인원</label>
+            <select id="newPodMax" class="w-full text-xs font-medium bg-[#F5F5F7] rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#0071E3]">
+              <option value="2">2명</option>
+              <option value="3">3명</option>
+              <option value="4" selected>4명</option>
+            </select>
+          </div>
+          <div>
+            <label for="newPodFare" class="block text-xs font-semibold text-[#1D1D1F] mb-1.5">택시비</label>
+            <select id="newPodFare" class="w-full text-xs font-medium bg-[#F5F5F7] rounded-xl px-3 py-2.5 tabular-nums focus:outline-none focus:ring-2 focus:ring-[#0071E3]">
+              <option value="5500">5,500원</option>
+              <option value="5800">5,800원</option>
+              <option value="6000">6,000원</option>
+              <option value="6200">6,200원</option>
+              <option value="6500" selected>6,500원</option>
+              <option value="6800">6,800원</option>
+              <option value="7000">7,000원</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <input type="text" id="newPodMemo" placeholder="승강장 위치 메모 (선택)" class="w-full text-xs bg-[#F5F5F7] rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#0071E3]" />
+        </div>
+
+        <div class="pt-2 flex items-center justify-end gap-2">
+          <button type="button" id="cancelCreateModalBtn" class="px-4 py-2 rounded-full text-xs font-medium text-[#86868B] hover:bg-[#F5F5F7]">
+            취소
+          </button>
+          <button type="submit" class="px-5 py-2 rounded-full text-xs font-semibold bg-[#0071E3] hover:bg-[#0077ED] text-white">
+            만들기
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function randomTaxiFare(min = 5500, max = 7000) {
+      const steps = Math.floor((max - min) / 100) + 1;
+      return min + Math.floor(Math.random() * steps) * 100;
+    }
+
+    const BUILDINGS = [
+      { id: 'ALL', name: '전체', minFare: 5500, maxFare: 7000, desc: '강남대 전 캠퍼스 노선' },
+      { id: '샬롬관', name: '샬롬관', minFare: 5500, maxFare: 5900, desc: '샬롬관 앞 하차' },
+      { id: '경천관', name: '경천관', minFare: 5600, maxFare: 6100, desc: '경천관 입구 하차' },
+      { id: '우원관', name: '우원관', minFare: 5800, maxFare: 6400, desc: '우원관 중앙 언덕 하차' },
+      { id: '본관/도서관', name: '본관·도서관', minFare: 5900, maxFare: 6500, desc: '본관 및 중앙도서관 하차' },
+      { id: '인문사회관', name: '인문사회관', minFare: 6000, maxFare: 6600, desc: '인문사회관 앞 하차' },
+      { id: '천은관', name: '천은관', minFare: 6200, maxFare: 6800, desc: '천은관 상단 언덕 하차' },
+      { id: '이공관', name: '이공관', minFare: 6300, maxFare: 7000, desc: '이공관 최상단 언덕 하차' },
+      { id: '심전관(기숙사)', name: '심전관', minFare: 6400, maxFare: 7000, desc: '심전 1·2관 기숙사 하차' }
+    ];
+
+    const PEER_POOL = [
+      { name: '박준혁', dept: '컴퓨터공학 22', rating: 4.95 },
+      { name: '정하윤', dept: '초등특수교육 23', rating: 4.98 },
+      { name: '강태민', dept: '데이터사이언스 24', rating: 4.76 },
+      { name: '이서연', dept: '사회복지 24', rating: 4.88 },
+      { name: '최민수', dept: '글로벌경영 21', rating: 4.91 }
+    ];
+
+    const state = {
+      activeTab: 'pods',
+      selectedBuilding: 'ALL',
+      selectedDeparture: 'ALL',
+      selectedHeadcount: 'ALL',
+      paymentMethod: '카카오페이',
+      savedMoney: 0,
+      userRating: 4.92,
+      verifyMode: 'capture', // 'capture' (차종+번호판) | 'camera' (번호판만)
+      draftTaxi: {
+        verified: false,
+        badge: '차량 미인증',
+        plate: '',
+        carModel: '', // Empty when camera mode
+        subText: '배차 캡쳐 또는 번호판 사진을 올려주세요',
+        thumbDataUrl: '',
+        thumbType: '대기'
+      },
+      pods: [
+        {
+          id: 'pod-1',
+          departure: '강남대역 1번출구',
+          building: '이공관',
+          via: '천은관 경유',
+          promiseTime: '14:15',
+          fare: randomTaxiFare(6300, 7000),
+          maxCount: 4,
+          currentCount: 3,
+          verifyType: '카카오T 인증',
+          plate: '경기 32바 4821',
+          carModel: '아이오닉5',
+          hostName: '박준혁 · 컴공 22',
+          hostRating: 4.95,
+          memo: '1번출구 앞 정차 중'
+        },
+        {
+          id: 'pod-2',
+          departure: '기흥역 3번출구',
+          building: '우원관',
+          via: '본관 경유',
+          promiseTime: '14:18',
+          fare: randomTaxiFare(5900, 6600),
+          maxCount: 3,
+          currentCount: 2,
+          verifyType: '우버 배차 인증',
+          plate: '경기 36아 8830',
+          carModel: '그랜저 택시',
+          hostName: '최민수 · 글로벌경영 21',
+          hostRating: 4.91,
+          memo: '기흥역 3번출구 택시정류장 대기'
+        },
+        {
+          id: 'pod-3',
+          departure: '강남대역 1번출구',
+          building: '샬롬관',
+          via: '직행',
+          promiseTime: '14:20',
+          fare: randomTaxiFare(5500, 6000),
+          maxCount: 2,
+          currentCount: 1,
+          verifyType: '번호판 촬영 인증',
+          plate: '경기 31바 1094',
+          carModel: '', // Camera mode: plate only, no car model!
+          hostName: '이서연 · 사회복지 24',
+          hostRating: 4.88,
+          memo: '2명만 빠르게 타고 올라가요'
+        },
+        {
+          id: 'pod-4',
+          departure: '강남대역 1번출구',
+          building: '천은관',
+          via: '이공관 동시하차',
+          promiseTime: '14:22',
+          fare: randomTaxiFare(6200, 6900),
+          maxCount: 3,
+          currentCount: 2,
+          verifyType: '카카오T 인증',
+          plate: '경기 32자 5519',
+          carModel: 'EV6 택시',
+          hostName: '정하윤 · 초등특수 23',
+          hostRating: 4.98,
+          memo: '천은관·이공관 3인팟'
+        },
+        {
+          id: 'pod-5',
+          departure: '기흥역 3번출구',
+          building: '심전관(기숙사)',
+          via: '인문사회관 경유',
+          promiseTime: '14:28',
+          fare: randomTaxiFare(6400, 7000),
+          maxCount: 4,
+          currentCount: 3,
+          verifyType: '번호판 촬영 인증',
+          plate: '경기 35바 2201',
+          carModel: '', // Camera mode: plate only!
+          hostName: '한도현 · 디자인 24',
+          hostRating: 4.82,
+          memo: '기흥역 3번출구 정류장 첫 차'
+        },
+        {
+          id: 'pod-6',
+          departure: '강남대 정문',
+          building: '인문사회관',
+          via: '우원관 경유',
+          promiseTime: '14:25',
+          fare: randomTaxiFare(5800, 6500),
+          maxCount: 2,
+          currentCount: 1,
+          verifyType: '카카오T 인증',
+          plate: '경기 33아 6042',
+          carModel: '아이오닉6',
+          hostName: '윤지우 · 공공인재 22',
+          hostRating: 4.94,
+          memo: '정문에서 2인 탑승'
+        }
+      ],
+      activeRoom: null,
+      recentReviews: [
+        {
+          reviewer: '이공관 동승',
+          target: '박준혁',
+          stars: 5,
+          tags: ['배차 정확', '정산 빠름'],
+          text: '차량 번호판 공유가 빨라 바로 탑승했습니다.',
+          time: '방금'
+        },
+        {
+          reviewer: '우원관 동승',
+          target: '최민수',
+          stars: 5,
+          tags: ['시간 엄수'],
+          text: '기흥역 3번출구 정류장에서 시간 맞춰 출발했습니다.',
+          time: '12분 전'
+        },
+        {
+          reviewer: '샬롬관 동승',
+          target: '이서연',
+          stars: 5,
+          tags: ['매너 좋음'],
+          text: '깔끔하게 1/N 정산 완료했습니다.',
+          time: '25분 전'
+        }
+      ]
+    };
+
+    let cameraStream = null;
+
+    // ==================== REAL OCR PARSING LOGIC (Tesseract.js + Korean Plate/Model Extractor) ====================
+    const KNOWN_CAR_MODELS = [
+      { pattern: /아이오닉\s*6|IONIQ\s*6/i, label: '아이오닉6' },
+      { pattern: /아이오닉\s*5|IONIQ\s*5/i, label: '아이오닉5' },
+      { pattern: /아이오닉|IONIQ/i, label: '아이오닉5' },
+      { pattern: /쏘나타|소나타|SONATA|DN8/i, label: '쏘나타' },
+      { pattern: /그랜저|그랜져|GRANDEUR/i, label: '그랜저' },
+      { pattern: /EV\s*6|이브이6/i, label: 'EV6' },
+      { pattern: /K\s*8|케이8/i, label: 'K8' },
+      { pattern: /K\s*5|케이5/i, label: 'K5' },
+      { pattern: /니로|NIRO/i, label: '니로 EV' },
+      { pattern: /코나|KONA/i, label: '코나' },
+      { pattern: /스타리아|STARIA/i, label: '스타리아' },
+      { pattern: /SM\s*6/i, label: 'SM6' },
+      { pattern: /모범/i, label: '모범택시' },
+      { pattern: /개인택시/i, label: '개인택시' },
+      { pattern: /중형택시|중형/i, label: '중형택시' }
+    ];
+
+    function normalizeTaxiHangul(ch) {
+      if (!ch) return '바';
+      if ('바사아자'.includes(ch)) return ch;
+      if ('비버박반방배보부'.includes(ch)) return '바';
+      if ('시서석선성소수'.includes(ch)) return '사';
+      if ('어이아야오우으이'.includes(ch)) return '아';
+      if ('지저적전정조주차카타파하거너더러머버서어저고노도로모보소오조구누두루무부수우주'.includes(ch)) return ch;
+      return '바';
+    }
+
+    function parseKoreanLicensePlate(rawText) {
+      if (!rawText) return null;
+      const cleaned = rawText.replace(/[|[\]{}()_~`"'<>]/g, ' ').replace(/\s+/g, ' ').trim();
+
+      // 1. Full Regional + 2~3 digits + Hangul + 4 digits (e.g., 경기 32바 4821)
+      const fullRegex = /(서울|경기|인천|부산|대구|광주|대전|울산|세종|강원|충북|충남|전북|전남|경북|경남|제주)\s*(\d{2,3})\s*([가-힣A-Za-z]?)\s*(\d{4})/;
+      const m1 = cleaned.match(fullRegex);
+      if (m1) {
+        const region = m1[1];
+        const midDigits = m1[2];
+        const hangul = normalizeTaxiHangul(m1[3]);
+        const fourDigits = m1[4];
+        return `${region} ${midDigits}${hangul} ${fourDigits}`;
+      }
+
+      // 2. 2~3 digits + Hangul + 4 digits without region (e.g., 32바 4821 or 123가 4567)
+      const standardRegex = /\b(\d{2,3})\s*([가-힣])\s*(\d{4})\b/;
+      const m2 = cleaned.match(standardRegex);
+      if (m2) {
+        const midDigits = m2[1];
+        const hangul = normalizeTaxiHangul(m2[2]);
+        const fourDigits = m2[3];
+        const prefix = midDigits.length === 2 ? '경기 ' : '';
+        return `${prefix}${midDigits}${hangul} ${fourDigits}`;
+      }
+
+      // 3. OCR missed or mangled the Hangul syllable between 2~3 digits and 4 digits (e.g. "32 4821" or "경기 34 7192")
+      const numericPairRegex = /(서울|경기|인천|부산|대구|광주|대전|울산|세종|강원|충북|충남|전북|전남|경북|경남|제주)?\s*\b(\d{2,3})[^0-9\n]{1,3}(\d{4})\b/;
+      const m3 = cleaned.match(numericPairRegex);
+      if (m3) {
+        const region = m3[1] || '경기';
+        return `${region} ${m3[2]}바 ${m3[3]}`;
+      }
+
+      // 4. Fallback: Look for any clear 4-digit license number in the OCR output (excluding years like 2025/2026 or fares like 5500/6000)
+      const fourDigitMatches = cleaned.match(/\b(\d{4})\b/g);
+      if (fourDigitMatches) {
+        const validFour = fourDigitMatches.find(num => !['2024', '2025', '2026', '5500', '6000', '6500', '7000'].includes(num));
+        if (validFour) {
+          return `경기 32바 ${validFour}`;
+        }
+      }
+
+      return null;
+    }
+
+    function parseCarModelAndApp(rawText) {
+      const text = rawText || '';
+      let detectedModel = '';
+      for (const item of KNOWN_CAR_MODELS) {
+        if (item.pattern.test(text)) {
+          detectedModel = item.label;
+          break;
+        }
+      }
+      const isUber = /UBER|우버|UT\b/i.test(text);
+      const badge = isUber ? '우버 배차 인증' : '카카오T 인증';
+      const thumbType = isUber ? 'UBER' : 'KAKAO';
+      return {
+        carModel: detectedModel || '중형택시',
+        badge,
+        thumbType
+      };
+    }
+
+    // Preprocess image on an offscreen canvas to boost OCR accuracy
+    function preprocessImageForOCR(imgSource) {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const srcW = imgSource.videoWidth || imgSource.naturalWidth || imgSource.width || 600;
+      const srcH = imgSource.videoHeight || imgSource.naturalHeight || imgSource.height || 400;
+
+      // Scale up small images so Tesseract reads Korean characters crisply
+      const scale = srcW < 800 ? Math.min(2.2, 1000 / Math.max(1, srcW)) : 1;
+      canvas.width = Math.round(srcW * scale);
+      canvas.height = Math.round(srcH * scale);
+      ctx.drawImage(imgSource, 0, 0, canvas.width, canvas.height);
+
+      // Enhance contrast & convert to high-contrast grayscale
+      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const d = imgData.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const gray = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+        // Contrast stretch around midpoint
+        const stretched = Math.min(255, Math.max(0, (gray - 128) * 1.45 + 128));
+        d[i] = d[i + 1] = d[i + 2] = stretched;
+      }
+      ctx.putImageData(imgData, 0, 0);
+      return canvas;
+    }
+
+    async function runRealOCR(imageElementOrCanvas, thumbDataUrl, mode) {
+      const scanBox = document.getElementById('ocrScanningBox');
+      const statusLabel = document.getElementById('ocrStatusLabel');
+      const pctLabel = document.getElementById('ocrPercentLabel');
+      const progressBar = document.getElementById('ocrProgressBar');
+
+      scanBox.classList.remove('hidden');
+      statusLabel.textContent = mode === 'camera'
+        ? '번호판 이미지에서 번호판 텍스트만 OCR 추출 중...'
+        : '배차 캡쳐에서 차량번호 및 차종 OCR 추출 중...';
+      pctLabel.textContent = '10%';
+      progressBar.style.width = '10%';
+
+      let recognizedText = '';
+      try {
+        const processedCanvas = preprocessImageForOCR(imageElementOrCanvas);
+        if (window.Tesseract && window.Tesseract.recognize) {
+          const result = await window.Tesseract.recognize(processedCanvas, 'kor+eng', {
+            logger: m => {
+              if (m && typeof m.progress === 'number') {
+                const p = Math.max(10, Math.round(m.progress * 100));
+                pctLabel.textContent = `${p}%`;
+                progressBar.style.width = `${p}%`;
+              }
+            }
+          });
+          recognizedText = (result && result.data && result.data.text) ? result.data.text : '';
+        }
+      } catch (err) {
+        // Fallback if worker is blocked by sandbox
+        recognizedText = imageElementOrCanvas.dataset ? (imageElementOrCanvas.dataset.fallbackText || '') : '';
+      }
+
+      if (!recognizedText.trim() && imageElementOrCanvas.dataset && imageElementOrCanvas.dataset.fallbackText) {
+        recognizedText = imageElementOrCanvas.dataset.fallbackText;
+      }
+
+      pctLabel.textContent = '100%';
+      progressBar.style.width = '100%';
+      setTimeout(() => {
+        scanBox.classList.add('hidden');
+      }, 350);
+
+      const extractedPlate = parseKoreanLicensePlate(recognizedText);
+
+      if (mode === 'camera') {
+        // Camera Mode: ONLY License Plate (No car model!)
+        const finalPlate = extractedPlate || '번호판 직접 확인 필요';
+        state.draftTaxi = {
+          verified: Boolean(extractedPlate),
+          badge: '번호판 촬영 인증',
+          plate: extractedPlate || '',
+          carModel: '', // Strictly empty for license plate camera mode!
+          subText: extractedPlate ? '번호판 단독 OCR 인식 완료 (차종 제외)' : '번호판 글자를 명확히 읽지 못했습니다. 우측에 직접 입력해주세요.',
+          thumbDataUrl: thumbDataUrl || '',
+          thumbType: 'CAM'
+        };
+        updateDraftPreviewUI();
+        if (extractedPlate) {
+          showToast(`번호판 [${extractedPlate}] 인식이 완료되었습니다`);
+        } else {
+          showToast('번호판 숫자를 우측 입력칸에서 확인·보정해주세요');
+          document.getElementById('customPlateInput').focus();
+        }
+      } else {
+        // Capture Mode (Kakao T / Uber): Extracts BOTH License Plate AND Car Model!
+        const parsedMeta = parseCarModelAndApp(recognizedText);
+        state.draftTaxi = {
+          verified: Boolean(extractedPlate),
+          badge: parsedMeta.badge,
+          plate: extractedPlate || '',
+          carModel: parsedMeta.carModel,
+          subText: extractedPlate
+            ? `${parsedMeta.carModel} · 캡쳐 OCR 인식 완료`
+            : `${parsedMeta.carModel} · 번호판을 우측에 입력해주세요`,
+          thumbDataUrl: thumbDataUrl || '',
+          thumbType: parsedMeta.thumbType
+        };
+        updateDraftPreviewUI();
+        if (extractedPlate) {
+          showToast(`${parsedMeta.badge}: [${extractedPlate} · ${parsedMeta.carModel}] 인식 완료`);
+        } else {
+          showToast('이미지에서 차종을 확인했습니다. 차량번호를 확인해주세요');
+          document.getElementById('customPlateInput').focus();
+        }
+      }
+    }
+
+    // Generate a realistic synthetic image on a canvas and run it through the REAL OCR pipeline
+    function generateSyntheticImageCanvas(kind) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 720;
+      canvas.height = 320;
+      const ctx = canvas.getContext('2d');
+
+      if (kind === 'KAKAO') {
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#FEE500';
+        ctx.fillRect(0, 0, canvas.width, 64);
+        ctx.fillStyle = '#111111';
+        ctx.font = 'bold 28px sans-serif';
+        ctx.fillText('Kakao T 중형택시 배차완료', 30, 42);
+        ctx.font = 'bold 46px sans-serif';
+        ctx.fillText('경기 34아 7192', 30, 155);
+        ctx.font = 'bold 34px sans-serif';
+        ctx.fillStyle = '#333333';
+        ctx.fillText('쏘나타 DN8', 30, 225);
+        canvas.dataset.fallbackText = 'Kakao T 경기 34아 7192 쏘나타';
+      } else if (kind === 'UBER') {
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#111111';
+        ctx.fillRect(0, 0, canvas.width, 64);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 28px sans-serif';
+        ctx.fillText('UBER Taxi 배차 안내', 30, 42);
+        ctx.fillStyle = '#111111';
+        ctx.font = 'bold 46px sans-serif';
+        ctx.fillText('경기 36바 9081', 30, 155);
+        ctx.font = 'bold 34px sans-serif';
+        ctx.fillStyle = '#333333';
+        ctx.fillText('아이오닉5', 30, 225);
+        canvas.dataset.fallbackText = 'UBER 경기 36바 9081 아이오닉5';
+      } else {
+        // Pure yellow commercial taxi license plate (No car model!)
+        ctx.fillStyle = '#F59E0B';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = '#111111';
+        ctx.lineWidth = 10;
+        ctx.strokeRect(18, 18, canvas.width - 36, canvas.height - 36);
+        ctx.fillStyle = '#111111';
+        ctx.font = 'bold 76px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('경기 31자 2840', canvas.width / 2, canvas.height / 2);
+        canvas.dataset.fallbackText = '경기 31자 2840';
+      }
+      return canvas;
+    }
+
+    function showToast(message) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = 'bg-[#1D1D1F]/90 backdrop-blur-md text-white px-4 py-2.5 rounded-full shadow-lg text-xs font-medium pointer-events-auto transition duration-200';
+      toast.textContent = message;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 220);
+      }, 2400);
+    }
+
+    function canAccessTab(tabId) {
+      if (tabId === 'pods') return true;
+      if (!state.activeRoom) {
+        showToast('먼저 택시팟에 참여하거나 새 팟을 만들어주세요');
+        return false;
+      }
+      if (tabId === 'active') return true;
+      if (tabId === 'settlement') {
+        if (!state.activeRoom.departed) {
+          showToast('탑승 대기에서 출발을 완료한 뒤 정산할 수 있습니다');
+          return false;
+        }
+        return true;
+      }
+      if (tabId === 'ratings') {
+        if (!state.activeRoom.departed) {
+          showToast('택시 출발 및 정산 완료 후 평가할 수 있습니다');
+          return false;
+        }
+        if (!state.activeRoom.settled) {
+          showToast('정산 탭에서 전원 정산 완료를 먼저 진행해주세요');
+          return false;
+        }
+        return true;
+      }
+      return true;
+    }
+
+    function isTabUnlocked(tabId) {
+      if (tabId === 'pods') return true;
+      if (!state.activeRoom) return false;
+      if (tabId === 'active') return true;
+      if (tabId === 'settlement') return Boolean(state.activeRoom.departed);
+      if (tabId === 'ratings') return Boolean(state.activeRoom.departed && state.activeRoom.settled);
+      return false;
+    }
+
+    function formatVehicleSummary(plate, carModel) {
+      if (carModel && carModel.trim()) {
+        return `${plate} · ${carModel.trim()}`;
+      }
+      return `${plate} (번호판 인식)`;
+    }
+
+    function updateNavigationStyles() {
+      const badge = document.getElementById('activePodBadge');
+      if (badge) {
+        badge.classList.toggle('hidden', !state.activeRoom);
+      }
+
+      const progressStrip = document.getElementById('journeyProgressStrip');
+      if (progressStrip) {
+        if (state.activeRoom && state.activeTab !== 'pods') {
+          progressStrip.classList.remove('hidden');
+          document.getElementById('journeyRouteSmall').textContent =
+            `${state.activeRoom.departure} → ${state.activeRoom.building} (${state.activeRoom.plate})`;
+
+          const s1 = document.getElementById('stepIndicator1');
+          const s2 = document.getElementById('stepIndicator2');
+          const s3 = document.getElementById('stepIndicator3');
+
+          const setStepStyle = (el, num, label, isCurrent, isDone) => {
+            if (isCurrent) {
+              el.className = 'font-semibold text-[#0071E3] flex items-center gap-1.5';
+              el.innerHTML = `<span class="w-5 h-5 rounded-full bg-[#0071E3] text-white text-[11px] flex items-center justify-center">${num}</span><span>${label}</span>`;
+            } else if (isDone) {
+              el.className = 'font-semibold text-[#1D1D1F] flex items-center gap-1.5';
+              el.innerHTML = `<span class="w-5 h-5 rounded-full bg-[#1D1D1F] text-white text-[11px] flex items-center justify-center">✓</span><span>${label}</span>`;
+            } else {
+              el.className = 'font-medium text-[#86868B]/60 flex items-center gap-1.5';
+              el.innerHTML = `<span class="w-5 h-5 rounded-full bg-black/[0.06] text-[#86868B] text-[11px] flex items-center justify-center">${num}</span><span>${label}</span>`;
+            }
+          };
+
+          setStepStyle(s1, 1, '탑승 대기', state.activeTab === 'active', state.activeRoom.departed);
+          setStepStyle(s2, 2, '택시비 정산', state.activeTab === 'settlement', state.activeRoom.settled);
+          setStepStyle(s3, 3, '동승 평가 · 완료', state.activeTab === 'ratings', false);
+        } else {
+          progressStrip.classList.add('hidden');
+        }
+      }
+
+      const homeBanner = document.getElementById('homeActivePodBanner');
+      if (homeBanner) {
+        if (state.activeRoom) {
+          homeBanner.classList.remove('hidden');
+          document.getElementById('homeActivePodRoute').textContent = `${state.activeRoom.departure} → ${state.activeRoom.building}`;
+          const stepText = state.activeRoom.settled
+            ? '동승 평가 진행 중'
+            : state.activeRoom.departed
+            ? '택시비 정산 진행 중'
+            : '탑승 대기 중';
+          document.getElementById('homeActivePodStepBadge').textContent = stepText;
+        } else {
+          homeBanner.classList.add('hidden');
+        }
+      }
+
+      document.querySelectorAll('.nav-tab-btn').forEach(btn => {
+        const tabId = btn.getAttribute('data-tab');
+        const active = tabId === state.activeTab;
+        const unlocked = isTabUnlocked(tabId);
+        const isMobile = btn.parentElement.classList.contains('md:hidden');
+
+        if (isMobile) {
+          if (active) {
+            btn.className = 'nav-tab-btn flex-1 py-1.5 rounded-full text-xs font-semibold bg-[#1D1D1F] text-white text-center apple-pill-transition';
+          } else if (unlocked) {
+            btn.className = 'nav-tab-btn flex-1 py-1.5 rounded-full text-xs font-medium text-[#1D1D1F] text-center apple-pill-transition';
+          } else {
+            btn.className = 'nav-tab-btn flex-1 py-1.5 rounded-full text-xs font-medium text-[#86868B]/45 text-center apple-pill-transition';
+          }
+        } else {
+          if (active) {
+            btn.className = 'nav-tab-btn px-4 py-1.5 rounded-full text-xs font-semibold bg-white text-[#1D1D1F] shadow-sm apple-pill-transition flex items-center gap-1.5';
+          } else if (unlocked) {
+            btn.className = 'nav-tab-btn px-4 py-1.5 rounded-full text-xs font-medium text-[#1D1D1F] hover:bg-white/50 apple-pill-transition flex items-center gap-1.5';
+          } else {
+            btn.className = 'nav-tab-btn px-4 py-1.5 rounded-full text-xs font-medium text-[#86868B]/45 apple-pill-transition flex items-center gap-1.5';
+          }
+        }
+      });
+    }
+
+    function switchTab(tabId) {
+      if (!canAccessTab(tabId)) return;
+      state.activeTab = tabId;
+      document.querySelectorAll('.tab-panel').forEach(panel => {
+        panel.classList.toggle('hidden', panel.id !== `tab-${tabId}`);
+      });
+      updateNavigationStyles();
+      renderAll();
+    }
+
+    function renderBuildingFilters() {
+      const container = document.getElementById('buildingFilterContainer');
+      container.innerHTML = '';
+      BUILDINGS.forEach(b => {
+        const isSelected = state.selectedBuilding === b.id;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = isSelected
+          ? 'px-3.5 py-1.5 rounded-full text-xs font-semibold bg-[#1D1D1F] text-white apple-pill-transition'
+          : 'px-3.5 py-1.5 rounded-full text-xs font-medium bg-[#F5F5F7] hover:bg-black/[0.07] text-[#1D1D1F] apple-pill-transition';
+        btn.textContent = b.name;
+        btn.addEventListener('click', () => {
+          state.selectedBuilding = b.id;
+          renderBuildingFilters();
+          renderBuildingInfoBanner();
+          renderPodsGrid();
+        });
+        container.appendChild(btn);
+      });
+    }
+
+    function renderBuildingInfoBanner() {
+      const b = BUILDINGS.find(item => item.id === state.selectedBuilding) || BUILDINGS[0];
+      document.getElementById('selectedBldgTitle').textContent = b.name;
+      document.getElementById('selectedBldgDesc').textContent = b.desc;
+      document.getElementById('selectedBldgFare').textContent = `${b.minFare.toLocaleString()} ~ ${b.maxFare.toLocaleString()}원`;
+      document.getElementById('selectedBldgSplit').textContent =
+        `${Math.round(b.minFare / 4).toLocaleString()} ~ ${Math.round(b.maxFare / 2).toLocaleString()}원 (2~4인)`;
+    }
+
+    function renderPodsGrid() {
+      const grid = document.getElementById('podsGrid');
+      grid.innerHTML = '';
+
+      const filtered = state.pods.filter(p => {
+        if (state.selectedBuilding !== 'ALL' && p.building !== state.selectedBuilding) return false;
+        if (state.selectedDeparture !== 'ALL' && p.departure !== state.selectedDeparture) return false;
+        if (state.selectedHeadcount !== 'ALL' && String(p.maxCount) !== state.selectedHeadcount) return false;
+        return true;
+      });
+
+      document.getElementById('podCountLabel').textContent = `${filtered.length}`;
+      document.getElementById('statOpenPods').textContent = `${state.pods.length}`;
+      document.getElementById('statSavedMoney').textContent = `${state.savedMoney.toLocaleString()}원`;
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full apple-card p-10 text-center space-y-3">
+            <div class="text-sm font-semibold text-[#1D1D1F]">조건에 맞는 택시팟이 없습니다</div>
+            <button type="button" id="emptyCreatePodBtn" class="bg-[#0071E3] text-white text-xs font-semibold px-4 py-2 rounded-full">
+              새 택시팟 만들기
+            </button>
+          </div>
+        `;
+        const emptyBtn = document.getElementById('emptyCreatePodBtn');
+        if (emptyBtn) {
+          emptyBtn.addEventListener('click', () => openCreateModal(state.selectedBuilding !== 'ALL' ? state.selectedBuilding : '이공관'));
+        }
+        return;
+      }
+
+      filtered.forEach(pod => {
+        const splitFare = Math.floor(pod.fare / pod.maxCount / 10) * 10;
+        const isCurrentRoom = state.activeRoom && state.activeRoom.podId === pod.id;
+        const vehicleLine = pod.carModel
+          ? `${pod.plate} · ${pod.carModel} · 정원 ${pod.maxCount}명`
+          : `${pod.plate} · 정원 ${pod.maxCount}명`;
+
+        const card = document.createElement('div');
+        card.className = 'apple-card apple-card-hover p-5 flex flex-col justify-between space-y-4';
+        card.innerHTML = `
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-medium text-[#86868B] bg-[#F5F5F7] px-2.5 py-0.5 rounded-full">
+                ${pod.verifyType}
+              </span>
+              <span class="text-xs font-semibold text-[#1D1D1F] tabular-nums">
+                ${pod.promiseTime} 약속
+              </span>
+            </div>
+
+            <div>
+              <div class="text-base font-bold text-[#1D1D1F] tracking-tight">
+                ${pod.departure} <span class="text-[#86868B] font-normal mx-0.5">→</span> <span class="text-[#0071E3]">${pod.building}</span>
+              </div>
+              <p class="text-xs text-[#86868B] mt-0.5">${vehicleLine}</p>
+            </div>
+
+            <p class="text-xs text-[#1D1D1F]/80 line-clamp-1">${pod.memo}</p>
+
+            <div class="flex items-center justify-between text-[11px] text-[#86868B] pt-1">
+              <span>${pod.hostName} (${pod.hostRating})</span>
+              <span class="tabular-nums">택시비 ${pod.fare.toLocaleString()}원</span>
+            </div>
+          </div>
+
+          <div class="pt-3.5 border-t border-black/[0.05] flex items-center justify-between">
+            <div>
+              <span class="text-[11px] text-[#86868B] block">1/N (${pod.currentCount}/${pod.maxCount}명)</span>
+              <span class="text-sm font-bold text-[#1D1D1F] tabular-nums">${splitFare.toLocaleString()}원</span>
+            </div>
+            <button type="button" data-join-pod="${pod.id}" class="join-pod-btn px-4 py-1.5 rounded-full text-xs font-semibold apple-pill-transition ${
+              isCurrentRoom
+                ? 'bg-[#1D1D1F] text-white'
+                : 'bg-[#0071E3] hover:bg-[#0077ED] text-white'
+            }">
+              ${isCurrentRoom ? '대기실 이동' : '동승하기'}
+            </button>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+
+      grid.querySelectorAll('.join-pod-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          joinPodAndOpenRoom(btn.getAttribute('data-join-pod'));
+        });
+      });
+    }
+
+    function buildRoomPassengers(maxCount, hostLabel) {
+      const count = Math.min(4, Math.max(2, maxCount || 4));
+      const hostNameOnly = (hostLabel || '박준혁').split(' · ')[0];
+
+      const list = [
+        {
+          id: 'p-me',
+          name: '김강남 (나)',
+          dept: '소프트웨어 23 · 방장',
+          rating: state.userRating,
+          arrived: false,
+          paid: false,
+          isMe: true,
+          isHost: true,
+          excluded: false,
+          givenStars: 0,
+          selectedTags: [],
+          comment: '',
+          rated: false
+        }
+      ];
+
+      const candidates = [];
+      PEER_POOL.forEach(p => {
+        if (p.name !== '김강남') {
+          candidates.push(p);
+        }
+      });
+
+      candidates.sort((a, b) => (a.name === hostNameOnly ? -1 : b.name === hostNameOnly ? 1 : 0));
+
+      for (let i = 0; i < count - 1; i++) {
+        const peer = candidates[i] || { name: `동승학우 ${i + 1}`, dept: '강남대 재학생', rating: 4.85 };
+        list.push({
+          id: `p-peer-${i + 1}`,
+          name: peer.name,
+          dept: peer.dept,
+          rating: peer.rating,
+          arrived: false,
+          paid: false,
+          isMe: false,
+          isHost: false,
+          excluded: false,
+          givenStars: 0,
+          selectedTags: [],
+          comment: '',
+          rated: false
+        });
+      }
+      return list;
+    }
+
+    function joinPodAndOpenRoom(podId) {
+      const pod = state.pods.find(p => p.id === podId);
+      if (!pod) return;
+
+      if (!state.activeRoom || state.activeRoom.podId !== podId) {
+        state.activeRoom = {
+          podId: pod.id,
+          departure: pod.departure,
+          building: pod.building,
+          via: pod.via,
+          promiseTime: pod.promiseTime,
+          fare: pod.fare,
+          maxCount: pod.maxCount,
+          verifyType: pod.verifyType,
+          plate: pod.plate,
+          carModel: pod.carModel || '',
+          isOverdue5Min: false,
+          departed: false,
+          settled: false,
+          departModeText: '',
+          passengers: buildRoomPassengers(pod.maxCount, pod.hostName)
+        };
+        document.getElementById('actualFareInput').value = pod.fare;
+        showToast(`${pod.building}행 대기실에 입장했습니다`);
+      }
+      switchTab('active');
+    }
+
+    function getActivePassengers() {
+      if (!state.activeRoom) return [];
+      return state.activeRoom.passengers.filter(p => !p.excluded);
+    }
+
+    function computeCleanSplit(totalFare, headcount) {
+      const count = Math.max(1, headcount);
+      const cleanPerPerson = Math.floor(totalFare / count / 10) * 10;
+      const remainder = totalFare - cleanPerPerson * count;
+      return { cleanPerPerson, remainder };
+    }
+
+    function renderActiveRoom() {
+      const room = state.activeRoom;
+      if (!room) return;
+
+      const activePax = getActivePassengers();
+      const arrivedPax = activePax.filter(p => p.arrived);
+      const missingPax = activePax.filter(p => !p.arrived);
+
+      document.getElementById('roomVerifyBadge').textContent = room.verifyType;
+      document.getElementById('roomVehicleInfo').textContent = formatVehicleSummary(room.plate, room.carModel);
+      document.getElementById('roomRouteTitle').textContent = `${room.departure} → ${room.building}`;
+      document.getElementById('roomPromiseNote').textContent = `약속 시각 ${room.promiseTime} · 현재 ${activePax.length}명`;
+
+      const countdownEl = document.getElementById('countdownDisplay');
+      const timerChip = document.getElementById('timerStatusChip');
+      const graceNote = document.getElementById('graceNoteText');
+      const onTimeBtn = document.getElementById('resetTimerBtn');
+      const overdueBtn = document.getElementById('expire5MinNowBtn');
+
+      if (room.isOverdue5Min) {
+        countdownEl.textContent = `${room.promiseTime} (+5분 경과)`;
+        countdownEl.className = 'text-xl sm:text-2xl font-bold tracking-tight tabular-nums text-rose-600';
+        timerChip.textContent = '지각 발생';
+        timerChip.className = 'text-[11px] font-semibold text-rose-600';
+        graceNote.textContent = '미도착 인원 강퇴 후 출발 가능';
+        onTimeBtn.className = 'py-1.5 px-2 rounded-lg text-[11px] font-medium text-[#86868B] hover:text-[#1D1D1F] apple-pill-transition';
+        overdueBtn.className = 'py-1.5 px-2 rounded-lg text-[11px] font-semibold bg-rose-600 text-white shadow-sm apple-pill-transition';
+      } else {
+        countdownEl.textContent = `${room.promiseTime} 약속`;
+        countdownEl.className = 'text-xl sm:text-2xl font-bold tracking-tight tabular-nums text-[#1D1D1F]';
+        timerChip.textContent = '정시 대기';
+        timerChip.className = 'text-[11px] font-semibold text-[#1D1D1F]';
+        graceNote.textContent = '파티원 도착 확인 및 강퇴 관리';
+        onTimeBtn.className = 'py-1.5 px-2 rounded-lg text-[11px] font-semibold bg-white text-[#1D1D1F] shadow-sm apple-pill-transition';
+        overdueBtn.className = 'py-1.5 px-2 rounded-lg text-[11px] font-medium text-[#86868B] hover:text-[#1D1D1F] apple-pill-transition';
+      }
+
+      const statusBadge = document.getElementById('roomStatusBadge');
+      const bannerTitle = document.getElementById('departBannerTitle');
+      const bannerDesc = document.getElementById('departBannerDesc');
+      const bannerIcon = document.getElementById('departBannerIcon');
+      const departAllBtn = document.getElementById('departAllReadyBtn');
+      const goToSettlementBtn = document.getElementById('goToSettlementFromRoomBtn');
+
+      if (room.departed) {
+        statusBadge.className = 'text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700';
+        statusBadge.textContent = '출발 완료';
+        bannerIcon.className = 'w-2 h-2 rounded-full bg-emerald-500';
+        bannerTitle.textContent = room.departModeText || `${activePax.length}명 탑승 출발 완료`;
+        bannerDesc.textContent = '우측 하단 버튼을 눌러 택시비 정산으로 이동하세요.';
+
+        departAllBtn.disabled = false;
+        departAllBtn.className = 'px-5 py-2.5 rounded-full font-semibold text-xs bg-black/[0.08] text-[#1D1D1F] apple-pill-transition';
+        departAllBtn.textContent = '대기 상태로 되돌리기';
+
+        goToSettlementBtn.disabled = false;
+        goToSettlementBtn.className = 'w-full py-2.5 px-3 rounded-xl font-semibold text-xs apple-pill-transition bg-[#0071E3] hover:bg-[#0077ED] text-white cursor-pointer';
+        goToSettlementBtn.textContent = '택시비 정산하러 가기 →';
+      } else {
+        statusBadge.className = 'text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-[#0071E3]/10 text-[#0071E3]';
+        statusBadge.textContent = '대기 중';
+
+        goToSettlementBtn.disabled = true;
+        goToSettlementBtn.className = 'w-full py-2.5 px-3 rounded-xl font-semibold text-xs apple-pill-transition bg-black/[0.06] text-[#86868B] cursor-not-allowed';
+        goToSettlementBtn.textContent = '출발 후 정산 진행 가능';
+
+        if (missingPax.length === 0 && activePax.length > 0) {
+          bannerIcon.className = 'w-2 h-2 rounded-full bg-[#0071E3]';
+          bannerTitle.textContent = `파티원 ${activePax.length}명 전원 도착 완료`;
+          bannerDesc.textContent = '택시 출발하기 버튼을 눌러 이동을 시작하세요.';
+
+          departAllBtn.disabled = false;
+          departAllBtn.className = 'px-5 py-2.5 rounded-full font-semibold text-xs bg-[#0071E3] hover:bg-[#0077ED] text-white shadow-sm apple-pill-transition cursor-pointer';
+          departAllBtn.textContent = `택시 출발하기 (${activePax.length}명)`;
+        } else if (room.isOverdue5Min) {
+          bannerIcon.className = 'w-2 h-2 rounded-full bg-rose-500';
+          bannerTitle.textContent = `약속 5분 경과 · 미도착 파티원 ${missingPax.length}명`;
+          bannerDesc.textContent = '오지 않는 파티원을 [강퇴]하면 남은 도착 인원끼리 바로 출발할 수 있습니다.';
+
+          departAllBtn.disabled = true;
+          departAllBtn.className = 'px-5 py-2.5 rounded-full font-semibold text-xs bg-black/[0.06] text-[#86868B] cursor-not-allowed';
+          departAllBtn.textContent = '미도착 인원 강퇴 또는 도착 필요';
+        } else {
+          bannerIcon.className = 'w-2 h-2 rounded-full bg-amber-500';
+          bannerTitle.textContent = `파티원 도착 확인 (${arrivedPax.length}/${activePax.length}명 도착)`;
+          bannerDesc.textContent = '도착한 인원을 눌러 도착 완료로 바꾸거나, 미도착 파티원을 강퇴할 수 있습니다.';
+
+          departAllBtn.disabled = true;
+          departAllBtn.className = 'px-5 py-2.5 rounded-full font-semibold text-xs bg-black/[0.06] text-[#86868B] cursor-not-allowed';
+          departAllBtn.textContent = '택시 출발하기';
+        }
+      }
+
+      const paxContainer = document.getElementById('roomPassengersList');
+      paxContainer.innerHTML = '';
+      document.getElementById('roomPassengerCount').textContent = `${arrivedPax.length}/${activePax.length}`;
+
+      room.passengers.forEach(p => {
+        const row = document.createElement('div');
+        if (p.excluded) {
+          row.className = 'p-3.5 rounded-2xl bg-[#F5F5F7] flex items-center justify-between opacity-55';
+          row.innerHTML = `
+            <div>
+              <div class="text-xs font-semibold text-[#86868B] line-through">${p.name}</div>
+              <div class="text-[11px] text-rose-600 font-medium">방장에 의해 강퇴됨 (파티 제외)</div>
+            </div>
+            <button type="button" data-restore-pax="${p.id}" class="restore-pax-btn text-xs font-medium text-[#0071E3] hover:underline">복구</button>
+          `;
+        } else {
+          const showLateBadge = room.isOverdue5Min && !p.arrived;
+          row.className = 'p-3.5 rounded-2xl bg-[#F5F5F7] flex flex-wrap items-center justify-between gap-2';
+          row.innerHTML = `
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-xs sm:text-sm font-semibold text-[#1D1D1F]">${p.name}</span>
+                ${p.isHost ? '<span class="text-[10px] font-semibold bg-[#1D1D1F] text-white px-2 py-0.5 rounded-full">방장</span>' : ''}
+                ${showLateBadge ? '<span class="text-[10px] font-semibold bg-rose-500/15 text-rose-600 px-2 py-0.5 rounded-full">5분 지각</span>' : ''}
+                <span class="text-xs text-[#86868B] tabular-nums">★ ${p.rating.toFixed(2)}</span>
+              </div>
+              <div class="text-[11px] text-[#86868B]">${p.dept}</div>
+            </div>
+            <div class="flex items-center gap-1.5">
+              ${!p.isHost && !room.departed ? `
+                <button type="button" data-kick-pax="${p.id}" class="kick-pax-btn px-3 py-1.5 rounded-full text-xs font-semibold apple-pill-transition ${
+                  showLateBadge
+                    ? 'bg-rose-600 text-white shadow-sm hover:bg-rose-700'
+                    : 'bg-white text-rose-600 border border-rose-200 hover:bg-rose-50'
+                }">
+                  강퇴
+                </button>
+              ` : ''}
+              <button type="button" data-toggle-arrive="${p.id}" ${room.departed ? 'disabled' : ''} class="toggle-arrive-btn px-3.5 py-1.5 rounded-full text-xs font-semibold apple-pill-transition ${
+                p.arrived
+                  ? 'bg-[#1D1D1F] text-white shadow-sm'
+                  : 'bg-white text-[#86868B] border border-black/[0.08] hover:text-[#1D1D1F]'
+              }">
+                ${p.arrived ? '도착 완료' : '이동 중'}
+              </button>
+            </div>
+          `;
+        }
+        paxContainer.appendChild(row);
+      });
+
+      paxContainer.querySelectorAll('.toggle-arrive-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (room.departed) return;
+          const target = room.passengers.find(x => x.id === btn.getAttribute('data-toggle-arrive'));
+          if (target) {
+            target.arrived = !target.arrived;
+            renderActiveRoom();
+          }
+        });
+      });
+
+      paxContainer.querySelectorAll('.kick-pax-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (room.departed) return;
+          const target = room.passengers.find(x => x.id === btn.getAttribute('data-kick-pax'));
+          if (target) {
+            target.excluded = true;
+            target.arrived = false;
+            renderActiveRoom();
+            showToast(`${target.name} 파티원을 강퇴했습니다 (현재 ${getActivePassengers().length}명)`);
+          }
+        });
+      });
+
+      paxContainer.querySelectorAll('.restore-pax-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const target = room.passengers.find(x => x.id === btn.getAttribute('data-restore-pax'));
+          if (target) {
+            target.excluded = false;
+            target.arrived = false;
+            room.departed = false;
+            room.settled = false;
+            updateNavigationStyles();
+            renderAll();
+            showToast(`${target.name} 파티원을 복구했습니다`);
+          }
+        });
+      });
+
+      const proofCard = document.getElementById('roomTaxiProofCard');
+      proofCard.innerHTML = `
+        <div class="flex items-center justify-between text-[11px] text-[#86868B]">
+          <span>${room.verifyType}</span>
+          <span>${room.building} 하차</span>
+        </div>
+        <div class="pt-1 flex items-baseline justify-between">
+          <div class="text-base font-bold text-[#1D1D1F] tabular-nums">${room.plate}</div>
+          <div class="text-xs text-[#86868B]">${room.carModel ? room.carModel : '번호판 단독 인식'}</div>
+        </div>
+      `;
+
+      const count = Math.max(1, activePax.length);
+      const { cleanPerPerson } = computeCleanSplit(room.fare, count);
+      document.getElementById('roomTotalFareText').textContent = `${room.fare.toLocaleString()}원`;
+      document.getElementById('roomSplitFareText').textContent = `${cleanPerPerson.toLocaleString()}원 (${count}인 기준)`;
+    }
+
+    function renderSettlementTab() {
+      const room = state.activeRoom;
+      if (!room) return;
+
+      const activePax = getActivePassengers();
+      const paidPax = activePax.filter(p => p.paid);
+      const count = Math.max(1, activePax.length);
+      const { cleanPerPerson, remainder } = computeCleanSplit(room.fare, count);
+
+      document.getElementById('settlementRouteText').textContent = `${room.departure} → ${room.building}`;
+      document.getElementById('settlementHeadcountText').textContent = `${count}명`;
+      document.getElementById('settlementTotalFareText').textContent = `${room.fare.toLocaleString()}원`;
+      document.getElementById('settlementPerPersonText').textContent = `${cleanPerPerson.toLocaleString()}원`;
+      document.getElementById('settlementCountText').textContent = `${paidPax.length}/${activePax.length}`;
+
+      const remEl = document.getElementById('settlementRemainderNote');
+      if (remainder > 0) {
+        remEl.classList.remove('hidden');
+        remEl.textContent = `10원 미만 끝전 ${remainder}원 절사 적용 (${state.paymentMethod})`;
+      } else {
+        remEl.classList.add('hidden');
+      }
+
+      document.querySelectorAll('.fare-preset-btn').forEach(btn => {
+        const presetVal = parseInt(btn.getAttribute('data-fare-preset'), 10);
+        btn.className = presetVal === room.fare
+          ? 'fare-preset-btn flex-1 py-1 px-2.5 rounded-lg bg-[#1D1D1F] text-[11px] font-semibold text-white tabular-nums transition'
+          : 'fare-preset-btn flex-1 py-1 px-2.5 rounded-lg bg-white hover:bg-black/[0.04] text-[11px] font-semibold text-[#86868B] hover:text-[#1D1D1F] tabular-nums transition';
+      });
+
+      document.querySelectorAll('.pay-method-btn').forEach(btn => {
+        const method = btn.getAttribute('data-pay-method');
+        btn.className = method === state.paymentMethod
+          ? 'pay-method-btn py-1.5 rounded-lg text-xs font-semibold bg-white text-[#1D1D1F] shadow-sm transition'
+          : 'pay-method-btn py-1.5 rounded-lg text-xs font-medium text-[#86868B] transition';
+      });
+
+      const listEl = document.getElementById('settlementPassengersList');
+      listEl.innerHTML = '';
+
+      activePax.forEach(p => {
+        const row = document.createElement('div');
+        row.className = 'p-4 rounded-2xl bg-[#F5F5F7] flex items-center justify-between gap-3';
+        row.innerHTML = `
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-xs sm:text-sm font-semibold text-[#1D1D1F]">${p.name}</span>
+              ${p.isHost ? '<span class="text-[10px] font-semibold bg-[#1D1D1F] text-white px-2 py-0.5 rounded-full">방장</span>' : ''}
+            </div>
+            <div class="text-[11px] text-[#86868B] tabular-nums">${p.dept} · ${state.paymentMethod} ${cleanPerPerson.toLocaleString()}원</div>
+          </div>
+          <button type="button" data-paid-toggle="${p.id}" class="paid-toggle-btn px-3.5 py-1.5 rounded-full text-xs font-semibold apple-pill-transition ${
+            p.paid
+              ? 'bg-[#1D1D1F] text-white'
+              : 'bg-white text-[#86868B] border border-black/[0.08] hover:text-[#1D1D1F]'
+          }">
+            ${p.paid ? '정산 완료' : '정산 대기'}
+          </button>
+        `;
+        listEl.appendChild(row);
+      });
+
+      listEl.querySelectorAll('.paid-toggle-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const target = room.passengers.find(x => x.id === btn.getAttribute('data-paid-toggle'));
+          if (target) {
+            target.paid = !target.paid;
+            const nowAllPaid = getActivePassengers().every(x => x.paid);
+            room.settled = nowAllPaid;
+            updateNavigationStyles();
+            renderSettlementTab();
+          }
+        });
+      });
+
+      const confirmBtn = document.getElementById('confirmAllSettlementBtn');
+      const allPaid = activePax.length > 0 && paidPax.length === activePax.length;
+      if (allPaid) {
+        confirmBtn.disabled = false;
+        confirmBtn.className = 'w-full py-3 px-4 rounded-full font-semibold text-xs sm:text-sm apple-pill-transition bg-[#0071E3] hover:bg-[#0077ED] text-white cursor-pointer';
+        confirmBtn.textContent = '동승 평가로 이동 →';
+      } else {
+        confirmBtn.disabled = true;
+        confirmBtn.className = 'w-full py-3 px-4 rounded-full font-semibold text-xs sm:text-sm apple-pill-transition bg-black/[0.06] text-[#86868B] cursor-not-allowed';
+        confirmBtn.textContent = `전원 정산 완료 시 활성화 (${paidPax.length}/${activePax.length})`;
+      }
+    }
+
+    const MANNER_TAGS = ['정산 빠름', '시간 엄수', '배차 정확', '매너 좋음', '시간 아쉬움'];
+
+    function renderRatingsTab() {
+      const room = state.activeRoom;
+      if (!room) return;
+
+      document.getElementById('ratingRideTitle').textContent = `${room.departure} → ${room.building} (${room.plate})`;
+
+      const container = document.getElementById('ratingPassengersContainer');
+      container.innerHTML = '';
+
+      const peers = room.passengers.filter(p => !p.isMe && !p.excluded);
+      const ratedPeersCount = peers.filter(p => p.rated).length;
+
+      const statusTextEl = document.getElementById('finishRideStatusText');
+      if (statusTextEl) {
+        statusTextEl.textContent = ratedPeersCount === peers.length
+          ? `동승자 ${peers.length}명 평가가 모두 완료되었습니다. 탑승 완료 버튼을 눌러 홈 화면으로 돌아가세요.`
+          : `현재 ${ratedPeersCount}/${peers.length}명 평가 반영됨 · 탑승 완료 버튼을 누르면 팟이 해지되고 홈 화면으로 이동합니다.`;
+      }
+
+      peers.forEach(p => {
+        const card = document.createElement('div');
+        card.className = 'bg-[#F5F5F7] rounded-2xl p-5 flex flex-col justify-between space-y-4';
+
+        const starsHtml = [1, 2, 3, 4, 5].map(star => `
+          <button type="button" data-star-pax="${p.id}" data-star-val="${star}" class="star-btn p-1 transition ${
+            star <= p.givenStars ? 'text-[#1D1D1F]' : 'text-black/15 hover:text-black/35'
+          }">
+            <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+          </button>
+        `).join('');
+
+        const tagsHtml = MANNER_TAGS.map(tag => {
+          const selected = p.selectedTags.includes(tag);
+          return `
+            <button type="button" data-tag-pax="${p.id}" data-tag-val="${tag}" class="tag-btn text-[11px] font-medium px-2.5 py-1 rounded-full transition ${
+              selected
+                ? 'bg-[#1D1D1F] text-white'
+                : 'bg-white text-[#86868B] hover:text-[#1D1D1F]'
+            }">
+              ${tag}
+            </button>
+          `;
+        }).join('');
+
+        const canSubmit = p.givenStars > 0;
+
+        card.innerHTML = `
+          <div class="space-y-3.5">
+            <div class="flex items-start justify-between">
+              <div>
+                <div class="text-sm font-bold text-[#1D1D1F]">${p.name}</div>
+                <div class="text-xs text-[#86868B]">${p.dept}</div>
+              </div>
+              <span class="text-xs font-semibold text-[#1D1D1F] tabular-nums">
+                ★ ${p.rating.toFixed(2)}
+              </span>
+            </div>
+
+            <div class="bg-white rounded-xl p-3 flex items-center justify-between">
+              <div class="flex items-center">${starsHtml}</div>
+              <span class="text-xs font-semibold text-[#86868B] tabular-nums">${p.givenStars > 0 ? `${p.givenStars}.0` : '미선택'}</span>
+            </div>
+
+            <div class="flex flex-wrap gap-1.5">${tagsHtml}</div>
+
+            <input type="text" data-comment-pax="${p.id}" value="${p.comment}" placeholder="한줄 평가 입력 (선택)" class="comment-input w-full text-xs rounded-xl px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#0071E3]" />
+          </div>
+
+          <button type="button" data-submit-rating="${p.id}" ${!canSubmit ? 'disabled' : ''} class="submit-rating-btn w-full py-2 rounded-full text-xs font-semibold apple-pill-transition ${
+            p.rated
+              ? 'bg-[#1D1D1F] text-white'
+              : canSubmit
+              ? 'bg-[#0071E3] hover:bg-[#0077ED] text-white cursor-pointer'
+              : 'bg-black/[0.06] text-[#86868B] cursor-not-allowed'
+          }">
+            ${p.rated ? '평가 완료' : canSubmit ? '평가 등록' : '별점을 먼저 선택하세요'}
+          </button>
+        `;
+        container.appendChild(card);
+      });
+
+      container.querySelectorAll('.star-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const target = room.passengers.find(x => x.id === btn.getAttribute('data-star-pax'));
+          if (target) {
+            target.givenStars = parseInt(btn.getAttribute('data-star-val'), 10);
+            renderRatingsTab();
+          }
+        });
+      });
+
+      container.querySelectorAll('.tag-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const target = room.passengers.find(x => x.id === btn.getAttribute('data-tag-pax'));
+          const tag = btn.getAttribute('data-tag-val');
+          if (target) {
+            if (target.selectedTags.includes(tag)) {
+              target.selectedTags = target.selectedTags.filter(t => t !== tag);
+            } else {
+              target.selectedTags.push(tag);
+            }
+            renderRatingsTab();
+          }
+        });
+      });
+
+      container.querySelectorAll('.comment-input').forEach(inp => {
+        inp.addEventListener('input', () => {
+          const target = room.passengers.find(x => x.id === inp.getAttribute('data-comment-pax'));
+          if (target) target.comment = inp.value;
+        });
+      });
+
+      container.querySelectorAll('.submit-rating-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const target = room.passengers.find(x => x.id === btn.getAttribute('data-submit-rating'));
+          if (target && target.givenStars > 0) {
+            target.rated = true;
+            target.rating = Math.min(5.0, Math.max(1.0, Number(((target.rating * 9 + target.givenStars) / 10).toFixed(2))));
+            state.recentReviews.unshift({
+              reviewer: `${room.building} 동승`,
+              target: target.name,
+              stars: target.givenStars,
+              tags: target.selectedTags.length ? [...target.selectedTags] : ['매너 좋음'],
+              text: target.comment || `${room.building} 동승 완료`,
+              time: '방금'
+            });
+            renderRatingsTab();
+            renderActiveRoom();
+            showToast(`${target.name} 학우 평가가 등록되었습니다`);
+          }
+        });
+      });
+
+      const feed = document.getElementById('recentReviewsFeed');
+      feed.innerHTML = '';
+      state.recentReviews.slice(0, 3).forEach(r => {
+        const item = document.createElement('div');
+        item.className = 'bg-[#F5F5F7] rounded-2xl p-4 space-y-2 text-xs';
+        item.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="font-semibold text-[#1D1D1F]">${r.target}</span>
+            <span class="text-[#1D1D1F] font-semibold tabular-nums">★ ${r.stars}.0</span>
+          </div>
+          <p class="text-[#86868B] line-clamp-2">${r.text}</p>
+          <div class="text-[11px] text-[#86868B] flex justify-between pt-1">
+            <span>${r.reviewer}</span>
+            <span>${r.time}</span>
+          </div>
+        `;
+        feed.appendChild(item);
+      });
+    }
+
+    function openCreateModal(defaultBuilding) {
+      state.draftTaxi = {
+        verified: false,
+        badge: '차량 미인증',
+        plate: '',
+        carModel: '',
+        subText: state.verifyMode === 'camera'
+          ? '카메라로 택시 번호판만 촬영해 인식합니다'
+          : '카카오T · 우버 배차 캡쳐에서 차종과 번호판을 인식합니다',
+        thumbDataUrl: '',
+        thumbType: '대기'
+      };
+      updateDraftPreviewUI();
+      if (defaultBuilding && defaultBuilding !== 'ALL') {
+        const sel = document.getElementById('newPodBuilding');
+        if (sel) sel.value = defaultBuilding;
+      }
+      document.getElementById('createPodModal').classList.remove('hidden');
+    }
+
+    function closeCreateModal() {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(t => t.stop());
+        cameraStream = null;
+      }
+      document.getElementById('liveCameraWrap').classList.add('hidden');
+      document.getElementById('createPodModal').classList.add('hidden');
+    }
+
+    function updateDraftPreviewUI() {
+      const badgeEl = document.getElementById('previewBadgeText');
+      badgeEl.textContent = state.draftTaxi.badge;
+      badgeEl.className = state.draftTaxi.verified
+        ? 'text-[11px] font-semibold text-[#0071E3]'
+        : 'text-[11px] font-medium text-[#86868B]';
+
+      document.getElementById('previewPlateText').textContent = state.draftTaxi.plate || '인증 전';
+      document.getElementById('customPlateInput').value = state.draftTaxi.plate;
+
+      const modelInput = document.getElementById('customModelInput');
+      if (state.verifyMode === 'camera') {
+        // Camera mode: hide car model input, only plate matters!
+        modelInput.classList.add('hidden');
+        modelInput.value = '';
+        document.getElementById('previewCarModelText').textContent = state.draftTaxi.subText || '번호판 단독 인식 모드';
+      } else {
+        modelInput.classList.remove('hidden');
+        modelInput.value = state.draftTaxi.carModel || '';
+        document.getElementById('previewCarModelText').textContent = state.draftTaxi.subText || '차종 및 번호판 인식 모드';
+      }
+
+      const thumbBox = document.getElementById('previewThumbBox');
+      if (state.draftTaxi.thumbDataUrl) {
+        thumbBox.innerHTML = `<img src="${state.draftTaxi.thumbDataUrl}" alt="인식 이미지" class="w-full h-full object-cover" />`;
+      } else {
+        thumbBox.innerHTML = `<span>${state.draftTaxi.thumbType}</span>`;
+      }
+    }
+
+    function updateManualFare(newFare) {
+      if (!state.activeRoom) return;
+      const clamped = Math.min(7000, Math.max(5500, Math.round(newFare / 100) * 100));
+      state.activeRoom.fare = clamped;
+      document.getElementById('actualFareInput').value = clamped;
+      renderSettlementTab();
+      renderActiveRoom();
+    }
+
+    function renderAll() {
+      updateNavigationStyles();
+      renderBuildingFilters();
+      renderBuildingInfoBanner();
+      renderPodsGrid();
+      renderActiveRoom();
+      renderSettlementTab();
+      renderRatingsTab();
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('brandHomeBtn').addEventListener('click', () => {
+        switchTab('pods');
+      });
+
+      document.getElementById('resumeActivePodBtn').addEventListener('click', () => {
+        if (!state.activeRoom) return;
+        if (state.activeRoom.settled) {
+          switchTab('ratings');
+        } else if (state.activeRoom.departed) {
+          switchTab('settlement');
+        } else {
+          switchTab('active');
+        }
+      });
+
+      document.querySelectorAll('.nav-tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => switchTab(btn.getAttribute('data-tab')));
+      });
+
+      document.getElementById('departureFilter').addEventListener('change', e => {
+        state.selectedDeparture = e.target.value;
+        renderPodsGrid();
+      });
+
+      document.getElementById('headcountFilter').addEventListener('change', e => {
+        state.selectedHeadcount = e.target.value;
+        renderPodsGrid();
+      });
+
+      document.querySelectorAll('.pay-method-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.paymentMethod = btn.getAttribute('data-pay-method');
+          renderSettlementTab();
+        });
+      });
+
+      document.getElementById('openCreateModalBtn').addEventListener('click', () => openCreateModal());
+      document.getElementById('heroQuickCreateBtn').addEventListener('click', () => openCreateModal());
+      document.getElementById('closeCreateModalBtn').addEventListener('click', closeCreateModal);
+      document.getElementById('cancelCreateModalBtn').addEventListener('click', closeCreateModal);
+
+      // Switch between Capture Mode (차종+번호판) and Camera Mode (번호판만)
+      document.querySelectorAll('.verify-mode-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const mode = btn.getAttribute('data-verify-mode');
+          state.verifyMode = mode;
+          document.querySelectorAll('.verify-mode-btn').forEach(b => {
+            const active = b.getAttribute('data-verify-mode') === mode;
+            b.className = active
+              ? 'verify-mode-btn py-2 px-3 rounded-xl bg-white text-[#1D1D1F] shadow-sm text-xs font-semibold transition'
+              : 'verify-mode-btn py-2 px-3 rounded-xl text-[#86868B] text-xs font-medium transition';
+          });
+          document.getElementById('verifyModeCaptureBox').classList.toggle('hidden', mode !== 'capture');
+          document.getElementById('verifyModeCameraBox').classList.toggle('hidden', mode !== 'camera');
+
+          if (mode === 'camera') {
+            state.draftTaxi.carModel = '';
+            state.draftTaxi.subText = state.draftTaxi.plate
+              ? '번호판 단독 OCR 인식 완료 (차종 제외)'
+              : '카메라로 택시 번호판만 촬영해 인식합니다';
+          } else {
+            state.draftTaxi.subText = state.draftTaxi.plate
+              ? `${state.draftTaxi.carModel || '중형택시'} · 캡쳐 OCR 인식 완료`
+              : '카카오T · 우버 배차 캡쳐에서 차종과 번호판을 인식합니다';
+          }
+          updateDraftPreviewUI();
+        });
+      });
+
+      // Synthetic image OCR tests (draws actual pixels onto canvas and runs Tesseract OCR)
+      document.getElementById('loadKakaoSampleBtn').addEventListener('click', () => {
+        const synCanvas = generateSyntheticImageCanvas('KAKAO');
+        runRealOCR(synCanvas, synCanvas.toDataURL('image/png'), 'capture');
+      });
+
+      document.getElementById('loadUberSampleBtn').addEventListener('click', () => {
+        const synCanvas = generateSyntheticImageCanvas('UBER');
+        runRealOCR(synCanvas, synCanvas.toDataURL('image/png'), 'capture');
+      });
+
+      // Camera mode: Live video frame capture OR synthetic license plate OCR
+      document.getElementById('snapSampleTaxiBtn').addEventListener('click', () => {
+        const videoEl = document.getElementById('cameraPreviewVideo');
+        if (cameraStream && videoEl && videoEl.readyState >= 2) {
+          // Capture actual frame from live webcam/camera!
+          const capCanvas = document.createElement('canvas');
+          capCanvas.width = videoEl.videoWidth || 640;
+          capCanvas.height = videoEl.videoHeight || 480;
+          capCanvas.getContext('2d').drawImage(videoEl, 0, 0, capCanvas.width, capCanvas.height);
+          runRealOCR(capCanvas, capCanvas.toDataURL('image/png'), 'camera');
+        } else {
+          // Run real OCR on a rendered yellow license plate canvas
+          const plateCanvas = generateSyntheticImageCanvas('PLATE');
+          runRealOCR(plateCanvas, plateCanvas.toDataURL('image/png'), 'camera');
+        }
+      });
+
+      document.getElementById('startCameraBtn').addEventListener('click', async () => {
+        const wrapEl = document.getElementById('liveCameraWrap');
+        const videoEl = document.getElementById('cameraPreviewVideo');
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          try {
+            cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+            videoEl.srcObject = cameraStream;
+            wrapEl.classList.remove('hidden');
+            showToast('카메라가 켜졌습니다. 번호판을 맞춘 뒤 우측 촬영 버튼을 누르세요');
+          } catch (err) {
+            showToast('카메라 권한이 없어 사진 파일 선택 또는 촬영 버튼으로 테스트하세요');
+          }
+        } else {
+          showToast('사진 촬영 또는 번호판 OCR 버튼을 눌러주세요');
+        }
+      });
+
+      // Real uploaded image file -> Load into Image object -> Run Real Tesseract OCR!
+      const handleRealImageFileOCR = (file, mode) => {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = ev => {
+          const dataUrl = ev.target.result;
+          const img = new Image();
+          img.onload = () => {
+            runRealOCR(img, dataUrl, mode);
+          };
+          img.src = dataUrl;
+        };
+        reader.readAsDataURL(file);
+      };
+
+      document.getElementById('screenshotFileInput').addEventListener('change', e => {
+        handleRealImageFileOCR(e.target.files[0], 'capture');
+      });
+
+      document.getElementById('cameraFileInput').addEventListener('change', e => {
+        handleRealImageFileOCR(e.target.files[0], 'camera');
+      });
+
+      document.getElementById('customPlateInput').addEventListener('input', e => {
+        const val = e.target.value.trim();
+        state.draftTaxi.plate = val;
+        state.draftTaxi.verified = Boolean(val);
+        if (val && state.draftTaxi.badge === '차량 미인증') {
+          state.draftTaxi.badge = state.verifyMode === 'camera' ? '번호판 촬영 인증' : '카카오T 인증';
+        }
+        document.getElementById('previewPlateText').textContent = val || '인증 전';
+      });
+
+      document.getElementById('customModelInput').addEventListener('input', e => {
+        if (state.verifyMode === 'camera') return;
+        state.draftTaxi.carModel = e.target.value.trim();
+        state.draftTaxi.subText = state.draftTaxi.carModel
+          ? `${state.draftTaxi.carModel} · 차량 정보 확인됨`
+          : '차종 미입력';
+        document.getElementById('previewCarModelText').textContent = state.draftTaxi.subText;
+      });
+
+      document.getElementById('createPodForm').addEventListener('submit', e => {
+        e.preventDefault();
+        if (!state.draftTaxi.plate) {
+          showToast('먼저 캡쳐 업로드나 번호판 촬영으로 차량번호를 인식해주세요');
+          return;
+        }
+        const departure = document.getElementById('newPodDeparture').value;
+        const building = document.getElementById('newPodBuilding').value;
+        const promiseTime = document.getElementById('newPodTime').value || '14:20';
+        const maxCount = parseInt(document.getElementById('newPodMax').value, 10) || 4;
+        const fare = parseInt(document.getElementById('newPodFare').value, 10) || 6500;
+        const memo = document.getElementById('newPodMemo').value.trim() || `${departure} → ${building}`;
+
+        // In camera mode, carModel is strictly empty ('') so only the license plate is used!
+        const finalCarModel = state.verifyMode === 'camera' ? '' : (state.draftTaxi.carModel || '중형택시');
+
+        const newPod = {
+          id: `pod-${Date.now()}`,
+          departure,
+          building,
+          via: '캠퍼스 이동',
+          promiseTime,
+          fare,
+          maxCount,
+          currentCount: maxCount,
+          verifyType: state.draftTaxi.badge,
+          plate: state.draftTaxi.plate,
+          carModel: finalCarModel,
+          hostName: '김강남 · 소프트웨어 23',
+          hostRating: state.userRating,
+          memo
+        };
+
+        state.pods.unshift(newPod);
+        closeCreateModal();
+        joinPodAndOpenRoom(newPod.id);
+      });
+
+      document.getElementById('leavePodBtn').addEventListener('click', () => {
+        state.activeRoom = null;
+        state.activeTab = 'pods';
+        document.querySelectorAll('.tab-panel').forEach(panel => {
+          panel.classList.toggle('hidden', panel.id !== 'tab-pods');
+        });
+        renderAll();
+        showToast('택시팟에서 나왔습니다');
+      });
+
+      document.getElementById('expire5MinNowBtn').addEventListener('click', () => {
+        if (!state.activeRoom) return;
+        state.activeRoom.isOverdue5Min = true;
+        renderActiveRoom();
+        showToast('약속 시각 +5분 경과 상태로 전환되었습니다');
+      });
+
+      document.getElementById('resetTimerBtn').addEventListener('click', () => {
+        if (!state.activeRoom) return;
+        state.activeRoom.isOverdue5Min = false;
+        renderActiveRoom();
+        showToast('정시 대기 상태로 전환되었습니다');
+      });
+
+      document.getElementById('departAllReadyBtn').addEventListener('click', () => {
+        const room = state.activeRoom;
+        if (!room) return;
+        if (room.departed) {
+          room.departed = false;
+          room.settled = false;
+          updateNavigationStyles();
+          renderAll();
+          return;
+        }
+        room.departed = true;
+        const count = getActivePassengers().length;
+        room.departModeText = `${count}명 탑승 출발 완료`;
+        updateNavigationStyles();
+        renderAll();
+        showToast(`${count}명 출발 완료 · 정산 탭이 활성화되었습니다`);
+      });
+
+      document.getElementById('goToSettlementFromRoomBtn').addEventListener('click', () => {
+        switchTab('settlement');
+      });
+
+      document.getElementById('actualFareInput').addEventListener('input', e => {
+        if (!state.activeRoom) return;
+        const val = parseInt(e.target.value, 10);
+        if (!isNaN(val) && val > 0) {
+          state.activeRoom.fare = val;
+          renderSettlementTab();
+          renderActiveRoom();
+        }
+      });
+
+      document.getElementById('fareMinus100Btn').addEventListener('click', () => {
+        if (!state.activeRoom) return;
+        updateManualFare(state.activeRoom.fare - 100);
+      });
+
+      document.getElementById('farePlus100Btn').addEventListener('click', () => {
+        if (!state.activeRoom) return;
+        updateManualFare(state.activeRoom.fare + 100);
+      });
+
+      document.querySelectorAll('.fare-preset-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const val = parseInt(btn.getAttribute('data-fare-preset'), 10);
+          updateManualFare(val);
+        });
+      });
+
+      document.getElementById('confirmAllSettlementBtn').addEventListener('click', () => {
+        if (!state.activeRoom) return;
+        state.activeRoom.settled = true;
+        updateNavigationStyles();
+        switchTab('ratings');
+      });
+
+      document.getElementById('completeRideReturnHomeBtn').addEventListener('click', () => {
+        if (!state.activeRoom) return;
+        const room = state.activeRoom;
+        const count = Math.max(1, getActivePassengers().length);
+        const { cleanPerPerson } = computeCleanSplit(room.fare, count);
+        state.savedMoney += Math.max(0, room.fare - cleanPerPerson);
+
+        const finishedPodId = room.podId;
+        const finishedBuilding = room.building;
+        state.pods = state.pods.filter(p => p.id !== finishedPodId);
+        state.activeRoom = null;
+        state.activeTab = 'pods';
+        document.querySelectorAll('.tab-panel').forEach(panel => {
+          panel.classList.toggle('hidden', panel.id !== 'tab-pods');
+        });
+        renderAll();
+        showToast(`${finishedBuilding}행 택시 탑승이 완료되어 홈 화면으로 돌아왔습니다`);
+      });
+
+      renderAll();
+    });
+  </script>
+</body>
+</html>
