@@ -181,10 +181,10 @@
           <div class="space-y-1.5">
             <span class="text-[11px] font-semibold uppercase tracking-widest text-[#0071E3]">Kangnam University Mobility</span>
             <h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-[#1D1D1F]">
-              캠퍼스 건물별 택시 동승
+              강남대 택시 동승
             </h2>
             <p class="text-xs sm:text-sm text-[#86868B]">
-              강남대역 1번출구 · 기흥역 3번출구에서 원하는 건물까지 2~4인이 함께 이동합니다.
+              강남대역 1번출구, 기흥역 3번출구에서 원하는 건물까지 2~4인이 함께 이동합니다.
             </p>
           </div>
 
@@ -684,12 +684,12 @@
       { id: 'ALL', name: '전체', minFare: 5500, maxFare: 7000, desc: '강남대 전 캠퍼스 노선' },
       { id: '샬롬관', name: '샬롬관', minFare: 5500, maxFare: 5900, desc: '샬롬관 앞 하차' },
       { id: '경천관', name: '경천관', minFare: 5600, maxFare: 6100, desc: '경천관 입구 하차' },
-      { id: '우원관', name: '우원관', minFare: 5800, maxFare: 6400, desc: '우원관 중앙 언덕 하차' },
-      { id: '본관/도서관', name: '본관·도서관', minFare: 5900, maxFare: 6500, desc: '본관 및 중앙도서관 하차' },
+      { id: '본관', name: '본관', minFare: 5800, maxFare: 6400, desc: '본관 하차' },
+      { id: '도서관', name: '도서관', minFare: 5900, maxFare: 6500, desc: '중앙도서관 하차' },
       { id: '인문사회관', name: '인문사회관', minFare: 6000, maxFare: 6600, desc: '인문사회관 앞 하차' },
       { id: '천은관', name: '천은관', minFare: 6200, maxFare: 6800, desc: '천은관 상단 언덕 하차' },
       { id: '이공관', name: '이공관', minFare: 6300, maxFare: 7000, desc: '이공관 최상단 언덕 하차' },
-      { id: '심전관(기숙사)', name: '심전관', minFare: 6400, maxFare: 7000, desc: '심전 1·2관 기숙사 하차' }
+      { id: '심전관', name: '심전관', minFare: 6400, maxFare: 7000, desc: '심전 1·2관 기숙사 하차' }
     ];
 
     const PEER_POOL = [
@@ -786,7 +786,7 @@
         {
           id: 'pod-5',
           departure: '기흥역 3번출구',
-          building: '심전관(기숙사)',
+          building: '심전관',
           via: '인문사회관 경유',
           promiseTime: '14:28',
           fare: randomTaxiFare(6400, 7000),
